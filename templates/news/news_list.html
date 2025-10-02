@@ -1,21 +1,92 @@
 {% extends 'default.html' %}
 {% load censor_filters %}
-{% block title %}Все новости{% endblock %}
+
+{% block title %}Все публикации{% endblock %}
 
 {% block content %}
-<h2>Список новостей</h2>
+<div style="max-width: 1200px; margin: 0 auto;">
+    <h2>Список публикаций</h2>
 
-{% for news_item in news %}
-    <div class="news-item">
-        <h3>
-            <a href="{% url 'news_detail' news_item.pk %}">
-                {{ news_item.title|censor }}
-            </a>
-        </h3>
-        <p><strong>Дата:</strong> {{ news_item.created_at|date:"d.m.Y" }}</p>
-        <p>{{ news_item.content|truncatechars:100|censor }}</p>
+    {% for post in posts %}
+        <div class="news-item">
+            <h3>
+                <a href="{% url 'news_detail' post.pk %}">
+                    {{ post.title|censor }}
+                </a>
+                <small style="color: #666; font-weight: normal;">
+                    {% if post.post_type == 'NW' %}
+                        (Новость)
+                    {% else %}
+                        (Статья)
+                    {% endif %}
+                </small>
+            </h3>
+
+            <p><strong>Автор:</strong> {{ post.author.user.username }}</p>
+            <p><strong>Дата:</strong> {{ post.created_at|date:"d.m.Y H:i" }}</p>
+            <p>{{ post.content|truncatechars:150|censor }}</p>
+
+            <!-- Ссылки действий -->
+            <div class="actions">
+                {% if post.author.user == user or user.is_superuser %}
+                    {% if post.post_type == 'NW' %}
+                        <a href="{% url 'news_edit' post.pk %}">
+                            ✏️ Редактировать
+                            {% if user.is_superuser and post.author.user != user %}
+
+                            {% endif %}
+                        </a>
+                        <a href="{% url 'news_delete' post.pk %}" style="color: #dc3545;">
+                            🗑️ Удалить
+                            {% if user.is_superuser and post.author.user != user %}
+
+                            {% endif %}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'article_edit' post.pk %}">
+                            ✏️ Редактировать
+                            {% if user.is_superuser and post.author.user != user %}
+
+                            {% endif %}
+                        </a>
+                        <a href="{% url 'article_delete' post.pk %}" style="color: #dc3545;">
+                            🗑️ Удалить
+                            {% if user.is_superuser and post.author.user != user %}
+
+                            {% endif %}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <small style="color: #666;">(Не ваша публикация)</small>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="news-item" style="text-align: center;">
+            <p>Публикаций пока нет.</p>
+            <p><a href="{% url 'news_create' %}">Создайте первую новость</a></p>
+        </div>
+    {% endfor %}
+
+    <!-- Пагинация -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; первая</a>
+                <a href="?page={{ page_obj.previous_page_number }}">предыдущая</a>
+            {% endif %}
+
+            <span class="current">
+                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">следующая</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">последняя &raquo;</a>
+            {% endif %}
+        </span>
     </div>
-{% empty %}
-    <p>Новостей пока нет.</p>
-{% endfor %}
+    {% endif %}
+</div>
 {% endblock %}

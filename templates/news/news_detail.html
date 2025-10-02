@@ -6,13 +6,46 @@
 {% block content %}
 <article>
     <h2>{{ news.title|censor }}</h2>
-    <p><strong>Дата публикации:</strong> {{ news.created_at|date:"d.m.Y" }}</p>
+    <p>
+        <strong>Автор:</strong> {{ news.author.user.username }} |
+        <strong>Дата публикации:</strong> {{ news.created_at|date:"d.m.Y" }} |
+        <strong>Тип:</strong>
+        {% if news.post_type == 'NW' %}
+            Новость
+        {% else %}
+            Статья
+        {% endif %}
+    </p>
+
     <div style="margin-top: 20px; line-height: 1.6;">
         {{ news.content|censor|linebreaks }}
+    </div>
+
+    <!-- Кнопки редактирования и удаления -->
+    <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+        {% if news.author.user == user or user.is_superuser %}
+            {% if news.post_type == 'NW' %}
+                <a href="{% url 'news_edit' news.pk %}" style="margin-right: 15px;">
+                    ✏️ Редактировать новость {% if user.is_superuser and news.author.user != user %}(режим администратора){% endif %}
+                </a>
+                <a href="{% url 'news_delete' news.pk %}" style="color: #dc3545;">
+                    🗑️ Удалить новость {% if user.is_superuser and news.author.user != user %}(режим администратора){% endif %}
+                </a>
+            {% else %}
+                <a href="{% url 'article_edit' news.pk %}" style="margin-right: 15px;">
+                    ✏️ Редактировать статью {% if user.is_superuser and news.author.user != user %}(режим администратора){% endif %}
+                </a>
+                <a href="{% url 'article_delete' news.pk %}" style="color: #dc3545;">
+                    🗑️ Удалить статью {% if user.is_superuser and news.author.user != user %}(режим администратора){% endif %}
+                </a>
+            {% endif %}
+        {% else %}
+            <p><small>Эта публикация принадлежит другому автору</small></p>
+        {% endif %}
     </div>
 </article>
 
 <p style="margin-top: 30px;">
-    <a href="{% url 'news_list' %}">← Назад к списку новостей</a>
+    <a href="{% url 'news_list' %}">← Назад к списку публикаций</a>
 </p>
 {% endblock %}
