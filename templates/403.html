@@ -1,0 +1,17 @@
+{% extends "account/base.html" %}
+
+{% block content %}
+<div class="error-page">
+    <h1>403 - Доступ запрещен</h1>
+    <p>У вас недостаточно прав для доступа к этой странице.</p>
+    <p>Если вы считаете, что это ошибка, обратитесь к администратору.</p>
+    <a href="{% url 'news_list' %}" class="btn btn-primary">Вернуться к новостям</a>
+</div>
+
+<style>
+.error-page { max-width: 600px; margin: 0 auto; padding: 40px 20px; text-align: center; }
+.error-page h1 { color: #dc3545; margin-bottom: 20px; }
+.btn { margin-top: 20px; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; }
+.btn-primary { background: #007bff; color: white; }
+</style>
+{% endblock %}

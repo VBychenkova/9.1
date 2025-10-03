@@ -1,0 +1,60 @@
+{% extends "account/base.html" %}
+
+{% block content %}
+<div class="become-author-page">
+    <h2>Стать автором</h2>
+
+    {% if is_author %}
+        <div class="alert alert-success">
+            <p>🎉 Вы уже являетесь автором!</p>
+            <p>Теперь вы можете создавать новости и статьи на нашем портале.</p>
+        </div>
+        <div class="author-actions">
+            <a href="{% url 'news_create' %}" class="btn btn-primary">Создать новость</a>
+            <a href="{% url 'article_create' %}" class="btn btn-secondary">Создать статью</a>
+            <a href="{% url 'news_list' %}" class="btn btn-outline-primary">Вернуться к новостям</a>
+        </div>
+    {% else %}
+        <div class="author-info">
+            <p>Став автором, вы получите возможность:</p>
+            <ul>
+                <li>Создавать новости</li>
+                <li>Публиковать статьи</li>
+                <li>Редактировать свои материалы</li>
+                <li>Участвовать в жизни портала</li>
+            </ul>
+
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-lg">
+                    🖊️ Стать автором
+                </button>
+            </form>
+
+            <p class="note">
+                <small>После нажатия кнопки вы будете добавлены в группу авторов</small>
+            </p>
+
+            <a href="{% url 'news_list' %}" class="btn btn-outline-secondary">Вернуться к новостям</a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.become-author-page { max-width: 600px; margin: 0 auto; padding: 20px; }
+.alert { padding: 15px; border-radius: 8px; margin: 20px 0; }
+.alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.author-info { margin: 30px 0; }
+.author-info ul { margin: 20px 0; padding-left: 20px; }
+.author-info li { margin: 8px 0; }
+.btn { margin: 5px; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block; }
+.btn-primary { background: #007bff; color: white; }
+.btn-success { background: #28a745; color: white; }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-outline-primary { border: 1px solid #007bff; color: #007bff; background: transparent; }
+.btn-outline-secondary { border: 1px solid #6c757d; color: #6c757d; background: transparent; }
+.btn-lg { padding: 12px 20px; font-size: 16px; }
+.note { margin-top: 15px; color: #6c757d; }
+.author-actions { margin: 20px 0; }
+</style>
+{% endblock %}

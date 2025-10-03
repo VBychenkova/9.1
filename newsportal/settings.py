@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-2bg7z8rbm#$kaptr%*5nkb4ofmivf5!$sc!x&2qj$co2e9ihon
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
 
 # Application definition
@@ -38,8 +38,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'django_filters',
     'news',
+    #'sign', # Убираем кастомные приложения
+    #'protect', # так как используем allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google', # Google провайдер
+    'allauth.socialaccount.providers.yandex', # Yandex провайдер
 ]
 
 MIDDLEWARE = [
@@ -50,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    #"allauth.account.middleware.AccountMiddleware", # Allauth middleware
 ]
 
 ROOT_URLCONF = 'newsportal.urls'
@@ -62,9 +71,10 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                'django.template.context_processors.request',
+                'django.template.context_processors.request', # Обязательно для allauth
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'news.context_processors.user_groups',
             ],
         },
     },
@@ -72,6 +82,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'newsportal.wsgi.application'
 
+AUTHENTICATION_BACKENDS = [
+    # Нужен для входа в админку Django
+    'django.contrib.auth.backends.ModelBackend',
+    # Специфичные методы аутентификации allauth
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Настройки сайта
+SITE_ID = 1
+
+# Настройки allauth
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # Для разработки
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/news/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -119,10 +149,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = '/admin/login/'
+SOCIALACCOUNT_PROVIDERS = {
+    'yandex': {
+        'SCOPE': ['login:email', 'login:info', 'login:avatar'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'METHOD': 'oauth2',
+    },
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+    }
+}

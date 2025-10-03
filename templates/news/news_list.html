@@ -7,6 +7,19 @@
 <div style="max-width: 1200px; margin: 0 auto;">
     <h2>Список публикаций</h2>
 
+    {% if user.is_authenticated and is_author %}
+        <div class="create-buttons">
+            <a href="{% url 'news_create' %}" class="btn btn-primary">Создать новость</a>
+            <a href="{% url 'article_create' %}" class="btn btn-success">Создать статью</a>
+        </div>
+    {% elif user.is_authenticated %}
+        <div class="alert alert-info">
+            <p>Хотите создавать новости и статьи?
+               <a href="{% url 'become_author' %}" class="btn btn-warning">Стать автором</a>
+            </p>
+        </div>
+    {% endif %}
+
     {% for post in posts %}
         <div class="news-item">
             <h3>
