@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 25px; border-radius: 0 0 10px 10px; }
+        .post-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #667eea; }
+        .cta-button { display: inline-block; background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 25px; margin: 10px 0; }
+        .footer { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>📰 Еженедельная рассылка News Portal</h2>
+    </div>
+
+    <div class="content">
+        <p><strong>Здравствуйте, {{ user.username }}!</strong></p>
+        <p>За неделю с {{ week_start }} по {{ week_end }} в категории <strong>"{{ category.name }}"</strong> появились новые статьи:</p>
+
+        {% for post in posts %}
+        <div class="post-item">
+            <h3 style="margin-top: 0;">{{ post.title }}</h3>
+            <p><strong>Автор:</strong> {{ post.author.user.username }}</p>
+            <p><strong>Опубликовано:</strong> {{ post.created_at|date:"d.m.Y H:i" }}</p>
+            <p>{{ post.content|truncatewords:30 }}</p>
+            <a href="http://127.0.0.1:8000/news/{{ post.id }}/" class="cta-button">📖 Читать статью</a>
+        </div>
+        {% endfor %}
+
+        <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px;">
+            <p><strong>💡 Не хотите получать рассылку?</strong></p>
+            <p>
+                <a href="http://127.0.0.1:8000/category/{{ category.id }}/unsubscribe/" style="color: #dc3545; text-decoration: none;">
+                    📧 Отписаться от категории "{{ category.name }}"
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Это автоматическая еженедельная рассылка от News Portal.</p>
+        <p>
+            <a href="http://127.0.0.1:8000/my-subscriptions/" style="color: #666;">
+                ⚙️ Управление подписками
+            </a>
+        </p>
+    </div>
+</body>
+</html>

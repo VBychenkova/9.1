@@ -27,4 +27,9 @@ urlpatterns = [
 
     # Стать автором
     path('become-author/', views.become_author, name='become_author'),
+
+    path('category/<int:category_id>/subscribe/', views.subscribe_to_category, name='subscribe_category'),
+    path('category/<int:category_id>/unsubscribe/', views.unsubscribe_from_category, name='unsubscribe_category'),
+    path('my-subscriptions/', views.my_subscriptions, name='my_subscriptions'),
+
 ]

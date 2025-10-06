@@ -1,17 +1,36 @@
-{% extends 'default.html' %}
-
-{% block title %}
-    {% if object %}Редактировать новость{% else %}Создать новость{% endif %}
-{% endblock %}
-
 {% block content %}
-<h2>{% if object %}Редактировать новость{% else %}Создать новость{% endif %}</h2>
+<div style="max-width: 800px; margin: 0 auto;">
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Сохранить</button>
-</form>
+    <!-- Информация о лимите публикаций -->
+    {% if user.is_authenticated %}
+    <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <h4>📊 Лимит публикаций</h4>
+        <p>
+            Сегодня вы можете опубликовать:
+            <strong>{{ remaining_posts }} из 3 записей</strong>
+        </p>
+        <small style="color: #666;">
+            Лимит обновляется каждый день в 00:00
+        </small>
+    </div>
+    {% endif %}
 
-<p><a href="{% url 'news_list' %}">← Отмена</a></p>
+    <h2>{% if object %}Редактировать{% else %}Создать{% endif %}
+        {% if request.resolver_match.url_name == 'news_create' or request.resolver_match.url_name == 'news_edit' %}
+            новость
+        {% else %}
+            статью
+        {% endif %}
+    </h2>
+
+    <!-- Остальная часть формы -->
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">
+            {% if object %}Сохранить{% else %}Опубликовать{% endif %}
+        </button>
+        <a href="{% url 'news_list' %}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
 {% endblock %}

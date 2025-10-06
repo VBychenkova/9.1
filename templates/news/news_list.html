@@ -7,6 +7,14 @@
 <div style="max-width: 1200px; margin: 0 auto;">
     <h2>Список публикаций</h2>
 
+    <!-- Блок управления подписками -->
+    {% if user.is_authenticated %}
+    <div class="subscription-management" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <a href="{% url 'my_subscriptions' %}" class="btn btn-info">📧 Мои подписки</a>
+        <small style="color: #666; margin-left: 10px;">Управляйте подписками на категории</small>
+    </div>
+    {% endif %}
+
     {% if user.is_authenticated and is_author %}
         <div class="create-buttons">
             <a href="{% url 'news_create' %}" class="btn btn-primary">Создать новость</a>
@@ -39,6 +47,33 @@
             <p><strong>Дата:</strong> {{ post.created_at|date:"d.m.Y H:i" }}</p>
             <p>{{ post.content|truncatechars:150|censor }}</p>
 
+            <!-- Категории и кнопки подписки -->
+            {% if post.categories.all %}
+            <div class="categories" style="margin: 10px 0;">
+                <strong>Категории:</strong>
+                {% for category in post.categories.all %}
+                <span class="badge" style="background: #6c757d; color: white; padding: 5px 10px; border-radius: 4px; margin: 2px; display: inline-block;">
+                    {{ category.name }}
+                    {% if user.is_authenticated %}
+                        {% if user in category.subscribers.all %}
+                            <a href="{% url 'unsubscribe_category' category.id %}"
+                               style="color: white; margin-left: 5px; text-decoration: none;"
+                               title="Отписаться от категории {{ category.name }}">
+                                ✕
+                            </a>
+                        {% else %}
+                            <a href="{% url 'subscribe_category' category.id %}"
+                               style="color: white; margin-left: 5px; text-decoration: none;"
+                               title="Подписаться на категорию {{ category.name }}">
+                                +
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <!-- Ссылки действий -->
             <div class="actions">
                 {% if post.author.user == user or user.is_superuser %}
@@ -46,26 +81,26 @@
                         <a href="{% url 'news_edit' post.pk %}">
                             ✏️ Редактировать
                             {% if user.is_superuser and post.author.user != user %}
-
+                                (админ)
                             {% endif %}
                         </a>
                         <a href="{% url 'news_delete' post.pk %}" style="color: #dc3545;">
                             🗑️ Удалить
                             {% if user.is_superuser and post.author.user != user %}
-
+                                (админ)
                             {% endif %}
                         </a>
                     {% else %}
                         <a href="{% url 'article_edit' post.pk %}">
                             ✏️ Редактировать
                             {% if user.is_superuser and post.author.user != user %}
-
+                                (админ)
                             {% endif %}
                         </a>
                         <a href="{% url 'article_delete' post.pk %}" style="color: #dc3545;">
                             🗑️ Удалить
                             {% if user.is_superuser and post.author.user != user %}
-
+                                (админ)
                             {% endif %}
                         </a>
                     {% endif %}
@@ -77,7 +112,9 @@
     {% empty %}
         <div class="news-item" style="text-align: center;">
             <p>Публикаций пока нет.</p>
-            <p><a href="{% url 'news_create' %}">Создайте первую новость</a></p>
+            {% if user.is_authenticated and is_author %}
+                <p><a href="{% url 'news_create' %}">Создайте первую новость</a></p>
+            {% endif %}
         </div>
     {% endfor %}
 
@@ -102,4 +139,88 @@
     </div>
     {% endif %}
 </div>
+
+<style>
+.news-item {
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 8px;
+    background: white;
+}
+
+.news-item h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.news-item h3 a {
+    text-decoration: none;
+    color: #007bff;
+}
+
+.news-item h3 a:hover {
+    text-decoration: underline;
+}
+
+.actions a {
+    margin-right: 15px;
+    text-decoration: none;
+    color: #007bff;
+}
+
+.actions a:hover {
+    text-decoration: underline;
+}
+
+.pagination {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.pagination a {
+    margin: 0 5px;
+    padding: 5px 10px;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.pagination a:hover {
+    background: #f8f9fa;
+}
+
+.pagination .current {
+    margin: 0 10px;
+    font-weight: bold;
+}
+
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    margin: 5px;
+    text-decoration: none;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary { background: #007bff; color: white; }
+.btn-success { background: #28a745; color: white; }
+.btn-warning { background: #ffc107; color: black; }
+.btn-info { background: #17a2b8; color: white; }
+.btn-danger { background: #dc3545; color: white; }
+
+.alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+</style>
 {% endblock %}

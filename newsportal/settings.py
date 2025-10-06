@@ -29,6 +29,12 @@ DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1']
 
 
+CELERY_BROKER_URL = 'memory://'
+CELERY_RESULT_BACKEND = 'cache+memory://'
+CELERY_TASK_ALWAYS_EAGER = True  # Задачи выполняются синхронно
+CELERY_TASK_EAGER_PROPAGATES = True
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -41,13 +47,12 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django_filters',
     'news',
-    #'sign', # Убираем кастомные приложения
-    #'protect', # так как используем allauth
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google', # Google провайдер
     'allauth.socialaccount.providers.yandex', # Yandex провайдер
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -148,8 +153,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -166,4 +175,33 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': ['profile', 'email'],
         'AUTH_PARAMS': {'access_type': 'online'},
     }
+}
+
+# Настройки email
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Для разработки
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Для продакшена
+
+# Для тестирования с реальной отправкой (опционально):
+EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your_email@yandex.ru'
+EMAIL_HOST_PASSWORD = 'your_app_password'
+DEFAULT_FROM_EMAIL = 'News Portal <your_email@yandex.ru>'
+SERVER_EMAIL = 'your_email@yandex.ru'
+
+# Дополнительные настройки allauth для email
+ACCOUNT_EMAIL_SUBJECT_PREFIX = '[News Portal] '
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # или 'mandatory' для обязательной верификации
+
+
+
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'send-weekly-digest': {
+        'task': 'news.tasks.send_weekly_digest',
+        'schedule': crontab(day_of_week=0, hour=8, minute=0),  # Воскресенье 8:00
+    },
 }

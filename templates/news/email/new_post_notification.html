@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 25px;
+            border-radius: 0 0 10px 10px;
+        }
+        .post-preview {
+            background: white;
+            padding: 20px;
+            border-left: 4px solid #28a745;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .category-badge {
+            background: #17a2b8;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 25px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>📰 Новая публикация в вашей подписке!</h2>
+    </div>
+
+    <div class="content">
+        <p><strong>Здравствуйте, {{ user.username }}!</strong></p>
+        <p>В категории <strong>"{{ category.name }}"</strong>, на которую вы подписаны, появилась новая публикация:</p>
+
+        <div class="post-preview">
+            <h3 style="margin-top: 0; color: #333;">{{ post.title }}</h3>
+
+            <div style="margin: 10px 0;">
+                <span class="category-badge">📁 {{ category.name }}</span>
+                <span style="color: #666; margin-left: 10px;">👤 {{ post.author.user.username }}</span>
+                <span style="color: #666; margin-left: 10px;">📅 {{ post.created_at|date:"d.m.Y H:i" }}</span>
+            </div>
+
+            <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                <strong>Краткое содержание:</strong>
+                <p>{{ post.content|truncatewords:50 }}</p>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <p>Хотите прочитать полную версию?</p>
+            <a href="http://127.0.0.1:8000/news/{{ post.id }}/" class="cta-button">
+                📖 Читать полностью
+            </a>
+        </div>
+
+        <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px;">
+            <p><strong>💡 Не хотите больше получать уведомления?</strong></p>
+            <p>
+                <a href="http://127.0.0.1:8000/category/{{ category.id }}/unsubscribe/"
+                   style="color: #dc3545; text-decoration: none;">
+                    📧 Отписаться от категории "{{ category.name }}"
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Это автоматическое уведомление от News Portal.</p>
+        <p>Пожалуйста, не отвечайте на это письмо.</p>
+        <p>
+            <a href="http://127.0.0.1:8000/my-subscriptions/" style="color: #666;">
+                ⚙️ Управление подписками
+            </a>
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,23 @@
+Еженедельная рассылка News Portal
+
+Здравствуйте, {{ user.username }}!
+
+За неделю с {{ week_start }} по {{ week_end }} в категории "{{ category.name }}" появились новые статьи:
+
+{% for post in posts %}
+---
+{{ post.title }}
+Автор: {{ post.author.user.username }}
+Опубликовано: {{ post.created_at|date:"d.m.Y H:i" }}
+Краткое содержание: {{ post.content|truncatewords:30 }}
+Ссылка: http://127.0.0.1:8000/news/{{ post.id }}/
+---
+{% endfor %}
+
+Не хотите получать рассылку?
+Отписаться от категории "{{ category.name }}": http://127.0.0.1:8000/category/{{ category.id }}/unsubscribe/
+
+Управление подписками: http://127.0.0.1:8000/my-subscriptions/
+
+--
+Это автоматическая еженедельная рассылка от News Portal.

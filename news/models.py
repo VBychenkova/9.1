@@ -27,10 +27,19 @@ class Author(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    subscribers = models.ManyToManyField(User, through='Subscription', related_name='subscribed_categories')
 
     def __str__(self):
         return self.name
 
+
+class Subscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'category')
 
 class Post(models.Model):
     ARTICLE = 'AR'
@@ -41,7 +50,7 @@ class Post(models.Model):
     ]
 
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
-    post_type = models.CharField(max_length=2, choices=POST_TYPES)
+    post_type = models.CharField(max_length=2, choices=[('NW', 'Новость'), ('AR', 'Статья')])
     created_at = models.DateTimeField(auto_now_add=True)
     categories = models.ManyToManyField(Category, through='PostCategory')
     title = models.CharField(max_length=200)

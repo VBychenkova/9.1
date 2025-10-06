@@ -1,13 +1,15 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
+from django.utils import timezone
+from datetime import timedelta
 from django.contrib import messages
 from django.shortcuts import redirect
-from .models import Post, Author, Category
+from .models import Post, Author, Category, Subscription
 from .forms import PostForm
 from .filters import NewsFilter
 from django.views.generic import TemplateView
@@ -25,16 +27,23 @@ class HomePageView(TemplateView):
             print(f"Ошибка при получении новостей: {e}")
         return context
 
+
 class NewsList(ListView):
     model = Post
     template_name = 'news/news_list.html'
-    context_object_name = 'posts'  # меняем на posts
+    context_object_name = 'posts'
     ordering = ['-created_at']
     paginate_by = 10
 
     def get_queryset(self):
-        # Показываем и новости и статьи
         return Post.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Добавляем информацию о том, является ли пользователь автором
+        context['is_author'] = self.request.user.groups.filter(
+            name='authors').exists() if self.request.user.is_authenticated else False
+        return context
 
 
 class NewsDetail(DetailView):
@@ -66,21 +75,82 @@ class NewsCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         if not request.user.groups.filter(name='authors').exists():
             messages.error(request, "Только авторы могут создавать новости. Станьте автором!")
             return redirect('news_list')
+
+        # Проверяем лимит публикаций
+        if not self.can_publish_today(request.user):
+            messages.error(
+                request,
+                'Вы превысили лимит публикаций! Нельзя публиковать более 3 новостей/статей в сутки.'
+            )
+            return redirect('news_list')
+
         return super().dispatch(request, *args, **kwargs)
 
+    def can_publish_today(self, user):
+        """Проверяет, может ли пользователь опубликовать еще одну запись сегодня"""
+        # Получаем начало текущих суток
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Считаем количество постов пользователя за сегодня
+        today_posts_count = Post.objects.filter(
+            author__user=user,
+            created_at__gte=today_start
+        ).count()
+
+        return today_posts_count < 3
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Добавляем информацию о лимите публикаций
+        if self.request.user.is_authenticated:
+            today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            today_posts_count = Post.objects.filter(
+                author__user=self.request.user,
+                created_at__gte=today_start
+            ).count()
+            context['remaining_posts'] = 3 - today_posts_count
+        else:
+            context['remaining_posts'] = 0
+
+        return context
+
     def form_valid(self, form):
+        # Проверяем лимит еще раз перед сохранением
+        if not self.can_publish_today(self.request.user):
+            messages.error(
+                self.request,
+                'Вы превысили лимит публикаций! Нельзя публиковать более 3 новостей/статей в сутки.'
+            )
+            return redirect('news_list')
+
         post = form.save(commit=False)
         post.post_type = 'NW'
 
         try:
-            # Пытаемся найти автора для текущего пользователя
             author = Author.objects.get(user=self.request.user)
         except Author.DoesNotExist:
-            # Если автора нет - создаем его
             author = Author.objects.create(user=self.request.user)
 
         post.author = author
-        return super().form_valid(form)
+
+        # Сохраняем пост
+        response = super().form_valid(form)
+
+        # Показываем сообщение об успехе с информацией о лимите
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_posts_count = Post.objects.filter(
+            author__user=self.request.user,
+            created_at__gte=today_start
+        ).count()
+
+        remaining_posts = 3 - today_posts_count
+        messages.success(
+            self.request,
+            f'Новость успешно создана! Сегодня вы можете опубликовать еще {remaining_posts} записей.'
+        )
+
+        return response
 
 
 class NewsUpdate(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -151,17 +221,75 @@ class ArticleCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         if not request.user.groups.filter(name='authors').exists():
             messages.error(request, "Только авторы могут создавать статьи. Станьте автором!")
             return redirect('news_list')
+
+        # Проверяем лимит публикаций
+        if not self.can_publish_today(request.user):
+            messages.error(
+                request,
+                'Вы превысили лимит публикаций! Нельзя публиковать более 3 новостей/статей в сутки.'
+            )
+            return redirect('news_list')
+
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form):
-        post = form.save(commit=False)
-        post.post_type = 'AR'  # автоматически ставим тип "статья"
+    def can_publish_today(self, user):
+        """Проверяет, может ли пользователь опубликовать еще одну запись сегодня"""
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # Получаем или создаем автора для текущего пользователя
+        today_posts_count = Post.objects.filter(
+            author__user=user,
+            created_at__gte=today_start
+        ).count()
+
+        return today_posts_count < 3
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Добавляем информацию о лимите публикаций
+        if self.request.user.is_authenticated:
+            today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            today_posts_count = Post.objects.filter(
+                author__user=self.request.user,
+                created_at__gte=today_start
+            ).count()
+            context['remaining_posts'] = 3 - today_posts_count
+        else:
+            context['remaining_posts'] = 0
+
+        return context
+
+    def form_valid(self, form):
+        # Проверяем лимит еще раз перед сохранением
+        if not self.can_publish_today(self.request.user):
+            messages.error(
+                self.request,
+                'Вы превысили лимит публикаций! Нельзя публиковать более 3 новостей/статей в сутки.'
+            )
+            return redirect('news_list')
+
+        post = form.save(commit=False)
+        post.post_type = 'AR'
+
         author, created = Author.objects.get_or_create(user=self.request.user)
         post.author = author
 
-        return super().form_valid(form)
+        response = super().form_valid(form)
+
+        # Показываем сообщение об успехе с информацией о лимите
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_posts_count = Post.objects.filter(
+            author__user=self.request.user,
+            created_at__gte=today_start
+        ).count()
+
+        remaining_posts = 3 - today_posts_count
+        messages.success(
+            self.request,
+            f'Статья успешно создана! Сегодня вы можете опубликовать еще {remaining_posts} записей.'
+        )
+
+        return response
 
 
 class ArticleUpdate(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -220,7 +348,6 @@ class ArticleDelete(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         return super().dispatch(request, *args, **kwargs)
 
 
-
 @login_required
 def become_author(request):
     user = request.user
@@ -240,4 +367,40 @@ def become_author(request):
 
     return render(request, 'news/become_author.html', {
         'is_author': is_author
+    })
+
+
+@login_required
+def subscribe_to_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+
+    # Проверяем, не подписан ли уже пользователь
+    if not Subscription.objects.filter(user=request.user, category=category).exists():
+        Subscription.objects.create(user=request.user, category=category)
+        messages.success(request, f'Вы подписались на категорию "{category.name}"')
+    else:
+        messages.info(request, f'Вы уже подписаны на категорию "{category.name}"')
+
+    return redirect('news_list')
+
+
+@login_required
+def unsubscribe_from_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+
+    subscription = Subscription.objects.filter(user=request.user, category=category)
+    if subscription.exists():
+        subscription.delete()
+        messages.success(request, f'Вы отписались от категории "{category.name}"')
+    else:
+        messages.info(request, f'Вы не были подписаны на категорию "{category.name}"')
+
+    return redirect('news_list')
+
+
+@login_required
+def my_subscriptions(request):
+    subscriptions = Subscription.objects.filter(user=request.user)
+    return render(request, 'news/my_subscriptions.html', {
+        'subscriptions': subscriptions
     })

@@ -1,0 +1,32 @@
+{% extends "account/base.html" %}
+
+{% block content %}
+<div class="subscriptions-page">
+    <h1>Мои подписки</h1>
+    
+    {% if subscriptions %}
+    <div class="subscriptions-list">
+        {% for subscription in subscriptions %}
+        <div class="subscription-item" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3>{{ subscription.category.name }}</h3>
+                <small>Подписаны с: {{ subscription.subscribed_at|date:"d.m.Y H:i" }}</small>
+            </div>
+            <div>
+                <a href="{% url 'unsubscribe_category' subscription.category.id %}" class="btn btn-danger">Отписаться</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-subscriptions" style="text-align: center; padding: 40px;">
+        <p>Вы еще не подписаны ни на одну категорию.</p>
+        <a href="{% url 'news_list' %}" class="btn btn-primary">Перейти к новостям</a>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 20px;">
+        <a href="{% url 'news_list' %}" class="btn btn-secondary">Вернуться к новостям</a>
+    </div>
+</div>
+{% endblock %}
