@@ -61,11 +61,13 @@ def notify_subscribers(sender, instance, created, **kwargs):
                 }
 
                 html_content = render_to_string('news/email/new_post_notification.html', context)
+                text_content = render_to_string('news/email/new_post_notification.txt', context)
 
+                # РЕАЛЬНАЯ ОТПРАВКА
                 send_mail(
                     subject=instance.title,
-                    message='',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    message=text_content,
+                    from_email='noreply@newsportal.com',
                     recipient_list=[subscriber.email],
                     html_message=html_content,
                     fail_silently=False,

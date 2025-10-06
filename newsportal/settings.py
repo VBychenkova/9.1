@@ -177,18 +177,16 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# Настройки email
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Для разработки
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Для продакшена
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # Для тестирования - письма в консоль
 
-# Для тестирования с реальной отправкой (опционально):
-EMAIL_HOST = 'smtp.yandex.ru'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'your_email@yandex.ru'
-EMAIL_HOST_PASSWORD = 'your_app_password'
-DEFAULT_FROM_EMAIL = 'News Portal <your_email@yandex.ru>'
-SERVER_EMAIL = 'your_email@yandex.ru'
+#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+#EMAIL_HOST = 'smtp.yandex.ru'
+#EMAIL_PORT = 587
+#EMAIL_USE_TLS = True
+#EMAIL_HOST_USER = 'email_login' #не буду указывать настоящие данные, т.к. не безопасно
+#EMAIL_HOST_PASSWORD = 'app_password'
+#DEFAULT_FROM_EMAIL = 'News Portal <email@yandex.ru>'
+#SERVER_EMAIL = 'email@yandex.ru'
 
 # Дополнительные настройки allauth для email
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[News Portal] '
@@ -202,6 +200,6 @@ from celery.schedules import crontab
 CELERY_BEAT_SCHEDULE = {
     'send-weekly-digest': {
         'task': 'news.tasks.send_weekly_digest',
-        'schedule': crontab(day_of_week=0, hour=8, minute=0),  # Воскресенье 8:00
+        'schedule': crontab(day_of_week=1, hour=8, minute=0),  # Понедельник 8:00
     },
 }

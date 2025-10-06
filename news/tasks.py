@@ -43,18 +43,17 @@ def send_weekly_digest():
                     html_message = render_to_string('news/email/weekly_digest.html', context)
                     text_message = render_to_string('news/email/weekly_digest.txt', context)
 
-                    # Для тестирования - выводим в консоль
-                    print(f"Would send email to {subscriber.email} with {new_posts.count()} posts")
+                    # РЕАЛЬНАЯ ОТПРАВКА EMAIL
+                    send_mail(
+                        subject=f'Еженедельная рассылка: новые статьи в категории "{category.name}"',
+                        message=text_message,
+                        from_email='noreply@newsportal.com',
+                        recipient_list=[subscriber.email],
+                        html_message=html_message,
+                        fail_silently=False,
+                    )
 
-                    # Раскомментируйте для реальной отправки
-                    # send_mail(
-                    #     subject=f'Еженедельная рассылка: новые статьи в категории "{category.name}"',
-                    #     message=text_message,
-                    #     from_email='noreply@newsportal.com',
-                    #     recipient_list=[subscriber.email],
-                    #     html_message=html_message,
-                    #     fail_silently=False,
-                    # )
+                    print(f"✅ Email sent to {subscriber.email} with {new_posts.count()} posts")
 
         print("Weekly digest completed successfully")
         return f"Weekly digest sent for {Category.objects.count()} categories"
