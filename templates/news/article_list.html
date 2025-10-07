@@ -1,0 +1,67 @@
+{% extends 'default.html' %}
+
+{% load cache %}
+
+{% block title %}Статьи - News Portal{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Статьи</h1>
+    
+    <!-- Кэшируем заголовок на 30сек -->
+    {% cache 30 articles_header %}
+    <div class="page-info">
+        <p>Всего статей: {{ articles.count }}</p>
+    </div>
+    {% endcache %}
+
+    {% for article in articles %}
+        <!-- Кэшируем каждую статью отдельно на 1 минуту -->
+        {% cache 60 article_item article.id %}
+        <div class="news-item">
+            <h3>
+                <a href="{% url 'article_detail' article.id %}">{{ article.title }}</a>
+            </h3>
+            <p><strong>Автор:</strong> {{ article.author.user.username }}</p>
+            <p><strong>Дата:</strong> {{ article.created_at|date:"d.m.Y H:i" }}</p>
+            <p>{{ article.content|truncatewords:30 }}</p>
+            
+            <div class="article-meta">
+                <span class="category">Категория: {{ article.category.name }}</span>
+                <span class="rating">Рейтинг: {{ article.rating }}</span>
+            </div>
+            
+            {% if user.is_authenticated and user == article.author.user or user.is_superuser %}
+            <div class="actions">
+                <a href="{% url 'article_update' article.id %}">Редактировать</a>
+                <a href="{% url 'article_delete' article.id %}">Удалить</a>
+            </div>
+            {% endif %}
+        </div>
+        {% endcache %}
+    {% empty %}
+        <p>Статьи пока не добавлены.</p>
+    {% endfor %}
+
+    <!-- Кэшируем пагинацию на 30сек -->
+    {% cache 30 articles_pagination page_obj.number %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; первая</a>
+                <a href="?page={{ page_obj.previous_page_number }}">предыдущая</a>
+            {% endif %}
+
+            <span class="current">
+                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}.
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">следующая</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">последняя &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endcache %}
+</div>
+{% endblock %}

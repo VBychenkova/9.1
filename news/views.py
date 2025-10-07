@@ -356,6 +356,32 @@ class ArticleDelete(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         return super().dispatch(request, *args, **kwargs)
 
 
+@method_decorator(cache_page(20), name='dispatch')
+class ArticleList(ListView):
+    model = Post
+    template_name = 'news/article_list.html'
+    context_object_name = 'articles'
+    ordering = ['-created_at']
+    paginate_by = 10
+
+    def get_queryset(self):
+        return Post.objects.filter(post_type='AR')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_author'] = self.request.user.groups.filter(
+            name='authors').exists() if self.request.user.is_authenticated else False
+        return context
+
+@method_decorator(cache_page(300), name='dispatch')
+class ArticleDetail(DetailView):
+    model = Post
+    template_name = 'news/article_detail.html'
+    context_object_name = 'article'
+
+    def get_queryset(self):
+        return Post.objects.filter(post_type='AR')
+
 # Функции, требующие аутентификации - НЕ кэшируем
 @login_required
 def become_author(request):

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Sum
+from django.utils import timezone
 
 
 class Author(models.Model):
@@ -52,6 +53,7 @@ class Post(models.Model):
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     post_type = models.CharField(max_length=2, choices=[('NW', 'Новость'), ('AR', 'Статья')])
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     categories = models.ManyToManyField(Category, through='PostCategory')
     title = models.CharField(max_length=200)
     content = models.TextField()
@@ -75,6 +77,11 @@ class Post(models.Model):
         from django.urls import reverse
         return reverse('news_detail', kwargs={'pk': self.pk})
 
+    def save(self, *args, **kwargs):
+        # При сохранении обновляем updated_at
+        if self.pk:  # Если объект уже существует
+            self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
 
 class PostCategory(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)

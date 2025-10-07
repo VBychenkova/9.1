@@ -38,5 +38,5 @@ def get_cached_popular_posts():
         popular_posts = Post.objects.filter(
             rating__gt=100
         ).order_by('-rating')[:5]
-        cache.set('popular_posts', popular_posts, 1800)  # 30 минут
+        cache.set('popular_posts', popular_posts, 180)  # 2 минуты
     return popular_posts

@@ -104,9 +104,23 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = 'none'  # Для разработки
 
+
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/news/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/news/'
+ACCOUNT_LOGOUT_ON_GET = False  # Должно быть False для безопасности
+ACCOUNT_SESSION_REMEMBER = True
+
+# Настройки CSRF
+CSRF_COOKIE_SECURE = False  # True для production с HTTPS
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+
+# ВРЕМЕННО
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -220,6 +234,9 @@ CACHES = {
 #        'LOCATION': 'redis://127.0.0.1:6379/1',
 #        'OPTIONS': {
 #            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-#        }
+#        },
+#         'KEY_PREFIX': 'newsportal'
 #    }
 #}
+
+CACHE_MIDDLEWARE_SECONDS = 30

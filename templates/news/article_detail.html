@@ -1,0 +1,95 @@
+{% extends 'default.html' %}
+{% load censor_filters %}
+
+{% block title %}{{ article.title }} - News Portal{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+    <article class="article-detail">
+        <h1>{{ article.title|censor }}</h1>
+
+        <div class="article-meta" style="color: #666; margin-bottom: 20px;">
+            <p><strong>Автор:</strong> {{ article.author.user.username }}</p>
+            <p><strong>Дата публикации:</strong> {{ article.created_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>Категория:</strong> {{ article.category.name }}</p>
+            <p><strong>Рейтинг:</strong> {{ article.rating }}</p>
+        </div>
+
+        <div class="article-content" style="line-height: 1.6; font-size: 16px;">
+            {{ article.content|linebreaks|censor }}
+        </div>
+
+        <!-- Категория и подписка -->
+        {% if article.category %}
+        <div class="categories" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <strong>Категория:</strong>
+            <span class="badge" style="background: #6c757d; color: white; padding: 5px 10px; border-radius: 4px; margin: 2px; display: inline-block;">
+                {{ article.category.name }}
+                {% if user.is_authenticated %}
+                    {% if user in article.category.subscribers.all %}
+                        <a href="{% url 'unsubscribe_from_category' article.category.id %}"
+                           style="color: white; margin-left: 5px; text-decoration: none;"
+                           title="Отписаться от категории {{ article.category.name }}">
+                            ✕
+                        </a>
+                    {% else %}
+                        <a href="{% url 'subscribe_to_category' article.category.id %}"
+                           style="color: white; margin-left: 5px; text-decoration: none;"
+                           title="Подписаться на категорию {{ article.category.name }}">
+                            +
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+    </article>
+
+    <!-- Действия -->
+    {% if user.is_authenticated and user == article.author.user or user.is_superuser %}
+    <div class="actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+        <a href="{% url 'article_update' article.pk %}" class="btn btn-primary">
+            ✏️ Редактировать статью
+            {% if user.is_superuser and article.author.user != user %}
+                (админ)
+            {% endif %}
+        </a>
+        <a href="{% url 'article_delete' article.pk %}" class="btn btn-danger">
+            🗑️ Удалить статью
+            {% if user.is_superuser and article.author.user != user %}
+                (админ)
+            {% endif %}
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 5px;
+    text-decoration: none;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.article-detail {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

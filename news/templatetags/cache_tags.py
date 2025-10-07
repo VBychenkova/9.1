@@ -9,5 +9,5 @@ def get_cached_categories():
     categories = cache.get('categories')
     if not categories:
         categories = Category.objects.all()
-        cache.set('categories', categories, 3600)  # 1 час
+        cache.set('categories', categories, 10)  # 10сек
     return categories

@@ -1,32 +1,92 @@
-{% extends "account/base.html" %}
+{% extends 'default.html' %}
+
+{% block title %}Мои подписки - News Portal{% endblock %}
 
 {% block content %}
-<div class="subscriptions-page">
-    <h1>Мои подписки</h1>
-    
+<div style="max-width: 1200px; margin: 0 auto;">
+    <h1>📧 Мои подписки</h1>
+
     {% if subscriptions %}
-    <div class="subscriptions-list">
-        {% for subscription in subscriptions %}
-        <div class="subscription-item" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
+        <div class="subscriptions-list">
+            <p>Вы подписаны на следующие категории:</p>
+
+            {% for subscription in subscriptions %}
+            <div class="subscription-item" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; background: white;">
                 <h3>{{ subscription.category.name }}</h3>
-                <small>Подписаны с: {{ subscription.subscribed_at|date:"d.m.Y H:i" }}</small>
+                <p><strong>Дата подписки:</strong> {{ subscription.created_at|date:"d.m.Y H:i" }}</p>
+
+                <div class="actions">
+                    <a href="{% url 'unsubscribe_from_category' subscription.category.id %}"
+                       class="btn btn-danger"
+                       onclick="return confirm('Вы уверены, что хотите отписаться от категории «{{ subscription.category.name }}»?')">
+                        Отписаться
+                    </a>
+                    <a href="{% url 'news_list' %}?category={{ subscription.category.id }}"
+                       class="btn btn-info">
+                        Посмотреть публикации
+                    </a>
+                </div>
             </div>
-            <div>
-                <a href="{% url 'unsubscribe_category' subscription.category.id %}" class="btn btn-danger">Отписаться</a>
-            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
     {% else %}
-    <div class="no-subscriptions" style="text-align: center; padding: 40px;">
-        <p>Вы еще не подписаны ни на одну категорию.</p>
-        <a href="{% url 'news_list' %}" class="btn btn-primary">Перейти к новостям</a>
-    </div>
+        <div class="alert alert-info">
+            <h3>У вас нет активных подписок</h3>
+            <p>Вы можете подписаться на интересующие вас категории на странице со списком публикаций.</p>
+            <a href="{% url 'news_list' %}" class="btn btn-primary">Перейти к публикациям</a>
+        </div>
     {% endif %}
-    
-    <div style="margin-top: 20px;">
-        <a href="{% url 'news_list' %}" class="btn btn-secondary">Вернуться к новостям</a>
-    </div>
 </div>
+
+<style>
+.subscription-item {
+    transition: all 0.3s ease;
+}
+
+.subscription-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.actions {
+    margin-top: 10px;
+}
+
+.actions .btn {
+    margin-right: 10px;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.alert {
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+    text-align: center;
+}
+</style>
 {% endblock %}

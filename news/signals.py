@@ -2,6 +2,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.contrib.auth.models import User, Group
 from django.core.mail import send_mail
+from django.core.cache import cache
 from django.template.loader import render_to_string
 from django.conf import settings
 from .models import Post, Category
@@ -85,3 +86,22 @@ def clear_cache_on_post_change(sender, instance, **kwargs):
 def clear_category_cache(sender, instance, **kwargs):
     # Очищаем кэш категорий
     cache.delete('categories')
+
+
+receiver(post_save, sender=Post)
+
+
+@receiver(post_delete, sender=Post)
+def clear_article_cache(sender, instance, **kwargs):
+    """Очистка кэша при изменении статей"""
+    if instance.post_type == 'AR':  # Только для статей
+        # Очищаем кэш детальной страницы статьи
+        cache.delete(f'article_detail_{instance.id}')
+
+        # Очищаем кэш списка статей
+        cache.delete_pattern('*article_list*')
+
+        # Очищаем кэш связанных статей
+        cache.delete(f'related_articles_{instance.category.id}')
+
+        print(f"Кэш для статьи {instance.id} очищен")

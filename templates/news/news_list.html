@@ -1,5 +1,6 @@
 {% extends 'default.html' %}
 {% load censor_filters %}
+{% load cache %}
 
 {% block title %}Все публикации{% endblock %}
 
@@ -28,10 +29,18 @@
         </div>
     {% endif %}
 
-    {% for post in posts %}
+    <!-- Кэшируем список публикаций на 20сек -->
+    {% cache 20 news_list page_obj.number %}
+    {% for post in page_obj %}
         <div class="news-item">
             <h3>
-                <a href="{% url 'news_detail' post.pk %}">
+                <a href="
+                    {% if post.post_type == 'NW' %}
+                        {% url 'news_detail' post.pk %}
+                    {% else %}
+                        {% url 'article_detail' post.pk %}
+                    {% endif %}
+                ">
                     {{ post.title|censor }}
                 </a>
                 <small style="color: #666; font-weight: normal;">
@@ -48,29 +57,27 @@
             <p>{{ post.content|truncatechars:150|censor }}</p>
 
             <!-- Категории и кнопки подписки -->
-            {% if post.categories.all %}
+            {% if post.category %}
             <div class="categories" style="margin: 10px 0;">
-                <strong>Категории:</strong>
-                {% for category in post.categories.all %}
+                <strong>Категория:</strong>
                 <span class="badge" style="background: #6c757d; color: white; padding: 5px 10px; border-radius: 4px; margin: 2px; display: inline-block;">
-                    {{ category.name }}
+                    {{ post.category.name }}
                     {% if user.is_authenticated %}
-                        {% if user in category.subscribers.all %}
-                            <a href="{% url 'unsubscribe_category' category.id %}"
+                        {% if user in post.category.subscribers.all %}
+                            <a href="{% url 'unsubscribe_from_category' category.id %}"
                                style="color: white; margin-left: 5px; text-decoration: none;"
-                               title="Отписаться от категории {{ category.name }}">
+                               title="Отписаться от категории {{ post.category.name }}">
                                 ✕
                             </a>
                         {% else %}
-                            <a href="{% url 'subscribe_category' category.id %}"
+                            <a href="{% url 'subscribe_to_category' category.id %}"
                                style="color: white; margin-left: 5px; text-decoration: none;"
-                               title="Подписаться на категорию {{ category.name }}">
+                               title="Подписаться на категорию {{ post.category.name }}">
                                 +
                             </a>
                         {% endif %}
                     {% endif %}
                 </span>
-                {% endfor %}
             </div>
             {% endif %}
 
@@ -78,7 +85,7 @@
             <div class="actions">
                 {% if post.author.user == user or user.is_superuser %}
                     {% if post.post_type == 'NW' %}
-                        <a href="{% url 'news_edit' post.pk %}">
+                        <a href="{% url 'news_update' post.pk %}">
                             ✏️ Редактировать
                             {% if user.is_superuser and post.author.user != user %}
                                 (админ)
@@ -91,7 +98,7 @@
                             {% endif %}
                         </a>
                     {% else %}
-                        <a href="{% url 'article_edit' post.pk %}">
+                        <a href="{% url 'article_update' post.pk %}">
                             ✏️ Редактировать
                             {% if user.is_superuser and post.author.user != user %}
                                 (админ)
@@ -117,6 +124,7 @@
             {% endif %}
         </div>
     {% endfor %}
+    {% endcache %}
 
     <!-- Пагинация -->
     {% if page_obj.has_other_pages %}
