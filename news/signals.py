@@ -1,11 +1,12 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.contrib.auth.models import User, Group
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-from .models import Post
+from .models import Post, Category
 from django.urls import reverse
+from .utils import clear_post_cache
 
 @receiver(post_save, sender=User)
 def add_user_to_common_group(sender, instance, created, **kwargs):
@@ -72,3 +73,15 @@ def notify_subscribers(sender, instance, created, **kwargs):
                     html_message=html_content,
                     fail_silently=False,
                 )
+
+
+@receiver(post_save, sender=Post)
+@receiver(post_delete, sender=Post)
+def clear_cache_on_post_change(sender, instance, **kwargs):
+    clear_post_cache(sender, instance, **kwargs)
+
+@receiver(post_save, sender=Category)
+@receiver(post_delete, sender=Category)
+def clear_category_cache(sender, instance, **kwargs):
+    # Очищаем кэш категорий
+    cache.delete('categories')

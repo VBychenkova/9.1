@@ -1,4 +1,5 @@
 {% load static %}
+{% load cache %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -117,6 +118,9 @@
 <body>
     <header>
         <h1><a href="/news/" style="text-decoration: none; color: #333;">News Portal</a></h1>
+
+        <!-- Кэширование навигации на 30 минут -->
+        {% cache 1800 navigation %}
         <nav>
             <a href="{% url 'news_list' %}">Новости</a>
             <a href="{% url 'news_search' %}">Поиск</a>
@@ -142,10 +146,11 @@
                 </span>
             {% endif %}
         </nav>
+        {% endcache %}
     </header>
 
     <main>
-        <!-- Отображение сообщений -->
+        <!-- Отображение сообщений - НЕ кэшируем, так как они динамические -->
         {% if messages %}
         <div class="messages">
             {% for message in messages %}
@@ -160,6 +165,8 @@
         {% endblock %}
     </main>
 
+    <!-- Кэширование футера на 24 часа -->
+    {% cache 86400 footer %}
     <footer>
         <p>&copy; {% now "Y" %} News Portal</p>
         <p>
@@ -167,6 +174,7 @@
             <a href="/news/">Все новости</a>
         </p>
     </footer>
+    {% endcache %}
 
     <!-- Подключение статических JS файлов -->
     <script src="{% static 'js/script.js' %}"></script>

@@ -13,8 +13,12 @@ from .models import Post, Author, Category, Subscription
 from .forms import PostForm
 from .filters import NewsFilter
 from django.views.generic import TemplateView
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 
 
+# Главная страница - кэшируем на 1 минуту
+@method_decorator(cache_page(60), name='dispatch')
 class HomePageView(TemplateView):
     template_name = 'news/home.html'
 
@@ -28,6 +32,8 @@ class HomePageView(TemplateView):
         return context
 
 
+# Список новостей - кэшируем на 1 минуту
+@method_decorator(cache_page(60), name='dispatch')
 class NewsList(ListView):
     model = Post
     template_name = 'news/news_list.html'
@@ -45,13 +51,14 @@ class NewsList(ListView):
             name='authors').exists() if self.request.user.is_authenticated else False
         return context
 
-
+# Детальная страница новости - кэшируем на 5 минут
+@method_decorator(cache_page(300), name='dispatch')
 class NewsDetail(DetailView):
     model = Post
     template_name = 'news/news_detail.html'
     context_object_name = 'news'
 
-
+# Поиск новостей - НЕ кэшируем, так как это динамический запрос
 def news_search(request):
     news_list = Post.objects.filter(post_type='NW').order_by('-created_at')
     news_filter = NewsFilter(request.GET, queryset=news_list)
@@ -62,6 +69,7 @@ def news_search(request):
     })
 
 
+# Создание, редактирование и удаление - НЕ кэшируем, так как требуют аутентификации
 class NewsCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     permission_required = ('news.add_post',)
     form_class = PostForm
@@ -348,6 +356,7 @@ class ArticleDelete(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         return super().dispatch(request, *args, **kwargs)
 
 
+# Функции, требующие аутентификации - НЕ кэшируем
 @login_required
 def become_author(request):
     user = request.user
@@ -404,3 +413,4 @@ def my_subscriptions(request):
     return render(request, 'news/my_subscriptions.html', {
         'subscriptions': subscriptions
     })
+

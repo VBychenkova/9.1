@@ -203,3 +203,23 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(day_of_week=1, hour=8, minute=0),  # Понедельник 8:00
     },
 }
+
+
+# Добавляем кэш-бэкенд (для теста)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# Или для Redis (для прода)
+#CACHES = {
+#    'default': {
+#        'BACKEND': 'django_redis.cache.RedisCache',
+#        'LOCATION': 'redis://127.0.0.1:6379/1',
+#        'OPTIONS': {
+#            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#        }
+#    }
+#}
