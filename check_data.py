@@ -4,39 +4,28 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'newsportal.settings')
 django.setup()
 
-from news.models import Author, Category, Post, Comment
+from news.models import Post, Category
 
-print("=" * 50)
-print("ПРОВЕРКА СОЗДАННЫХ ДАННЫХ")
-print("=" * 50)
 
-# Проверка количества
-print(f"Авторы: {Author.objects.count()}")
-print(f"Категории: {Category.objects.count()}")
-print(f"Статьи/новости: {Post.objects.count()}")
-print(f"Комментарии: {Comment.objects.count()}")
+def check_data():
+    print("=== ТЕКУЩИЕ ДАННЫЕ ===")
 
-print("\n--- РЕЙТИНГИ АВТОРОВ ---")
-authors = Author.objects.all()
-for author in authors:
-    print(f"{author.user.username}: {author.rating}")
+    # Статьи
+    articles = Post.objects.filter(post_type='AR')
+    print(f"📄 Статей в базе: {articles.count()}")
+    for article in articles[:5]:
+        cats = list(article.categories.all().values_list('name', flat=True))
+        print(f"   - {article.title} (ID: {article.id})")
+        print(f"     Категории: {cats}")
 
-print("\n--- ЛУЧШАЯ СТАТЬЯ ---")
-best_post = Post.objects.order_by('-rating').first()
-if best_post:
-    print(f"Заголовок: {best_post.title}")
-    print(f"Автор: {best_post.author.user.username}")
-    print(f"Рейтинг: {best_post.rating}")
-    print(f"Превью: {best_post.preview()}")
+    # Категории
+    categories = Category.objects.all()
+    print(f"📁 Категорий в базе: {categories.count()}")
+    for category in categories:
+        print(f"   - {category.name} (ID: {category.id})")
 
-    print("\n--- КОММЕНТАРИИ К СТАТЬЕ ---")
-    comments = Comment.objects.filter(post=best_post)
-    for i, comment in enumerate(comments, 1):
-        print(f"{i}. {comment.user.username} (рейтинг: {comment.rating}):")
-        print(f"   {comment.text}")
-        print(f"   Дата: {comment.created_at}")
-else:
-    print("Статьи не найдены")
+    return articles.count(), categories.count()
 
-print("\n" + "=" * 50)
-print("ПРОВЕРКА ЗАВЕРШЕНА")
+
+if __name__ == '__main__':
+    check_data()

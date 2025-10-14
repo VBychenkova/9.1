@@ -88,20 +88,41 @@ def clear_category_cache(sender, instance, **kwargs):
     cache.delete('categories')
 
 
-receiver(post_save, sender=Post)
-
-
+@receiver(post_save, sender=Post)
 @receiver(post_delete, sender=Post)
-def clear_article_cache(sender, instance, **kwargs):
-    """Очистка кэша при изменении статей"""
-    if instance.post_type == 'AR':  # Только для статей
-        # Очищаем кэш детальной страницы статьи
-        cache.delete(f'article_detail_{instance.id}')
+def clear_post_cache(sender, instance, **kwargs):
+    """Очистка кэша при изменении постов"""
+    try:
+        # Очищаем кэш детальной страницы
+        if instance.post_type == 'NW':
+            cache.delete(f'news_detail_{instance.id}')
+        elif instance.post_type == 'AR':
+            cache.delete(f'article_detail_{instance.id}')
 
-        # Очищаем кэш списка статей
-        cache.delete_pattern('*article_list*')
+        # Очищаем основные кэши списков
+        cache_keys_to_clear = [
+            'news_list',
+            'article_list',
+            'articles_header',
+            'articles_pagination_1',
+            'articles_pagination_2',
+            'news_header',
+            'news_pagination_1',
+            'news_pagination_2',
+            'navigation',
+            'footer'
+        ]
 
-        # Очищаем кэш связанных статей
-        cache.delete(f'related_articles_{instance.category.id}')
+        for key in cache_keys_to_clear:
+            cache.delete(key)
 
-        print(f"Кэш для статьи {instance.id} очищен")
+        # Очищаем кэш связанных статей (правильно работаем с categories)
+        if hasattr(instance, 'categories'):
+            categories = instance.categories.all()
+            for category in categories:
+                cache.delete(f'related_articles_{category.id}')
+
+        print(f"Кэш очищен для поста {instance.id}")
+
+    except Exception as e:
+        print(f"Ошибка при очистке кэша: {e}")
