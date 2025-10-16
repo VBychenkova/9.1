@@ -1,55 +1,63 @@
 {% load static %}
 {% load cache %}
+{% load i18n %}
+
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ request.LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}News Portal{% endblock %}</title>
+    <title>{% block title %}{% trans "News Portal" %}{% endblock %}</title>
 
-    <!-- Подключение статических CSS файлов -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <header>
-        <h1><a href="/news/" style="text-decoration: none; color: #333;">News Portal</a></h1>
+        <h1><a href="/news/" style="text-decoration: none; color: #333;">{% trans "News Portal" %}</a></h1>
 
-        <!-- Кэширование навигации на 30 минут -->
-        {% cache 10 navigation %}
+          <!-- ВРЕМЕННО отключаем кэш для отладки перевода -->
+        <!-- {% cache 10 navigation request.LANGUAGE_CODE %} -->
         <nav>
-            <a href="{% url 'news_list' %}">Новости</a>
-            <a href="{% url 'article_list' %}">Статьи</a>
-            <a href="{% url 'news_search' %}">Поиск</a>
+            <a href="{% url 'news_list' %}">{% trans "News" %}</a>
+            <a href="{% url 'article_list' %}">{% trans "Articles" %}</a>
+            <a href="{% url 'news_search' %}">{% trans "Search" %}</a>
 
             {% if user.is_authenticated %}
-                <!-- Временно упрощенная навигация -->
-                <a href="{% url 'become_author' %}">Стать автором</a>
-                <a href="{% url 'news_create' %}">Добавить новость</a>
-                <a href="{% url 'article_create' %}">Добавить статью</a>
+                <a href="{% url 'become_author' %}">{% trans "Become Author" %}</a>
+                <a href="{% url 'news_create' %}">{% trans "Add News" %}</a>
+                <a href="{% url 'article_create' %}">{% trans "Add Article" %}</a>
+                <a href="{% url 'my_subscriptions' %}">{% trans "My Subscriptions" %}</a>
 
-                <!-- Блок управления подписками -->
-                <a href="{% url 'my_subscriptions' %}">Мои подписки</a>
-
-                <!-- Информация о пользователе -->
                 <span style="float: right;">
-                    Добро пожаловать, {{ user.username }}
+                    {% trans "Welcome" %}, {{ user.username }}
                     <form action="{% url 'account_logout' %}" method="post" style="display: inline; margin-left: 15px;">
                         {% csrf_token %}
                         <button type="submit" style="background: none; border: none; color: #333; cursor: pointer; text-decoration: underline; padding: 0;">
-                            Выйти
+                            {% trans "Logout" %}
                         </button>
                     </form>
                 </span>
             {% else %}
                 <span style="float: right;">
-                    <a href="{% url 'account_login' %}">Войти</a>
-                    <a href="{% url 'account_signup' %}" style="margin-left: 15px;">Регистрация</a>
+                    <a href="{% url 'account_login' %}">{% trans "Login" %}</a>
+                    <a href="{% url 'account_signup' %}" style="margin-left: 15px;">{% trans "Sign Up" %}</a>
                 </span>
             {% endif %}
+
+            <!-- Переключатель языка -->
+            <div style="float: right; margin-right: 20px;">
+                <form action="{% url 'set_language' %}" method="post">
+                    {% csrf_token %}
+                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                    <select name="language" onchange="this.form.submit()" style="padding: 5px;">
+                        <option value="ru" {% if request.LANGUAGE_CODE == 'ru' %}selected{% endif %}>Русский</option>
+                        <option value="en" {% if request.LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+                    </select>
+                </form>
+            </div>
         </nav>
-        {% endcache %}
+        <!--{% endcache %}-->
     </header>
 
     <main>
@@ -68,16 +76,15 @@
         {% endblock %}
     </main>
 
-    <!-- Кэширование футера на 24 часа -->
-    {% cache 10 footer %}
+    <!-- {% cache 10 footer request.LANGUAGE_CODE %} -->
     <footer>
-        <p>&copy; {% now "Y" %} News Portal</p>
+        <p>&copy; {% now "Y" %} {% trans "News Portal" %}</p>
         <p>
-            <a href="/">Главная</a> |
-            <a href="/news/">Все новости</a>
+            <a href="/">{% trans "Home" %}</a> |
+            <a href="/news/">{% trans "All News" %}</a>
         </p>
     </footer>
-    {% endcache %}
+    <!-- {% endcache %} -->
 
     <!-- Подключение статических JS файлов -->
     <script src="{% static 'js/script.js' %}"></script>

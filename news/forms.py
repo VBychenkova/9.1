@@ -1,5 +1,6 @@
 from django import forms
 from .models import Post
+from django.utils.translation import gettext_lazy as _
 
 class PostForm(forms.ModelForm):
     class Meta:
@@ -10,3 +11,8 @@ class PostForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'categories': forms.SelectMultiple(attrs={'class': 'form-control'}),
         }
+
+class ContactForm(forms.Form):
+    name = forms.CharField(label=_('Your Name'))
+    email = forms.EmailField(label=_('Email Address'))
+    message = forms.CharField(label=_('Message'), widget=forms.Textarea)

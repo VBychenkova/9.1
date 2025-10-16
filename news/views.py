@@ -16,6 +16,7 @@ from .filters import NewsFilter, ArticleFilter
 from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext as _
 
 
 # Главная страница - кэшируем на 1 минуту
@@ -448,4 +449,12 @@ def my_subscriptions(request):
     return render(request, 'news/my_subscriptions.html', {
         'subscriptions': subscriptions
     })
+
+def some_view(request):
+    context = {
+        'title': _('News Portal'),
+        'description': _('Latest news and articles'),
+        'categories': _('Categories'),
+    }
+    return render(request, 'template.html', context)
 

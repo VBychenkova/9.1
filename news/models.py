@@ -4,6 +4,7 @@ from django.db.models import Sum
 from django.urls import reverse
 from django.utils import timezone
 #from news.models import Post, Category, Author, Subscription
+from django.utils.translation import gettext_lazy as _
 
 
 class Author(models.Model):
@@ -176,6 +177,15 @@ class Comment(models.Model):
         return f"Comment by {self.user.username} on {self.post.title}"
 
 
-from django.db import models
 
-# Create your models here.
+class Article(models.Model):
+    title = models.CharField(_('Title'), max_length=200)
+    content = models.TextField(_('Content'))
+    created_at = models.DateTimeField(_('Created at'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Article')
+        verbose_name_plural = _('Articles')
+
+    def __str__(self):
+        return self.title
