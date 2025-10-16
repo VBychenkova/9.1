@@ -2,15 +2,15 @@
 {% load censor_filters %}
 {% load i18n %}
 
-{% block title %}Новости - News Portal{% endblock %}
+{% block title %}{% trans "News" %} - {% trans "News Portal" %}{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>📰 Новости</h1>
+        <h1>📰 {% trans "News" %}</h1>
         <div>
             {% if user.is_authenticated and is_author %}
-            <a href="{% url 'news_create' %}" class="btn btn-success">➕ Добавить новость</a>
+            <a href="{% url 'news_create' %}" class="btn btn-success">➕ {% trans "Add News" %}</a>
             {% endif %}
         </div>
     </div>
@@ -19,8 +19,8 @@
     <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
         <form method="get" action="{% url 'news_search' %}">
             <div class="input-group">
-                <input type="text" name="q" class="form-control" placeholder="Поиск по заголовку и содержанию..." value="{{ request.GET.q }}">
-                <button class="btn btn-primary" type="submit">🔍 Найти</button>
+                <input type="text" name="q" class="form-control" placeholder="{% trans 'Search by title and content...' %}" value="{{ request.GET.q }}">
+                <button class="btn btn-primary" type="submit">🔍 {% trans "Search" %}</button>
             </div>
         </form>
     </div>
@@ -28,95 +28,114 @@
     <!-- Статистика -->
     <div style="margin-bottom: 15px;">
         <small class="text-muted">
-            📊 Показано: <strong>{{ posts|length }}</strong> новостей
-            {% if page_obj.paginator.count > posts|length %}
-            из <strong>{{ page_obj.paginator.count }}</strong>
+            📊 {% trans "Showing:" %}
+            <strong>
+                {% if posts %}
+                    {{ posts|length }}
+                {% else %}
+                    0
+                {% endif %}
+            </strong>
+            {% trans "news" %}
+
+            {% if page_obj and page_obj.paginator.count > posts|length %}
+                {% trans "of" %} <strong>{{ page_obj.paginator.count }}</strong>
+            {% elif total_news_count and total_news_count > posts|length %}
+                {% trans "of" %} <strong>{{ total_news_count }}</strong>
             {% endif %}
         </small>
     </div>
 
     <!-- Результаты -->
     <div class="posts-container">
-        {% for post in posts %}
-        <div class="news-item" style="border: 1px solid #ddd; padding: 20px; margin: 15px 0; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3>
-                <a href="{% url 'news_detail' post.pk %}" style="color: #0d6efd; text-decoration: none;">
-                    {{ post.title|censor_text }}
-                </a>
-                {% if post.is_recent %}
-                <span class="badge bg-success" style="font-size: 0.7em;">NEW</span>
-                {% endif %}
-                {% if post.rating > 50 %}
-                <span class="badge bg-warning" style="font-size: 0.7em;">🔥</span>
-                {% endif %}
-            </h3>
+        {% if posts %}
+            {% for post in posts %}
+            <div class="news-item" style="border: 1px solid #ddd; padding: 20px; margin: 15px 0; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3>
+                    <a href="{% url 'news_detail' post.pk %}" style="color: #0d6efd; text-decoration: none;">
+                        {{ post.title|censor_text }}
+                    </a>
+                    {% if post.is_recent %}
+                    <span class="badge bg-success" style="font-size: 0.7em;">{% trans "NEW" %}</span>
+                    {% endif %}
+                    {% if post.rating > 50 %}
+                    <span class="badge bg-warning" style="font-size: 0.7em;">🔥</span>
+                    {% endif %}
+                </h3>
 
-            <div style="color: #666; margin-bottom: 10px;">
-                <strong>👤 Автор:</strong> {{ post.author.user.username }} |
-                <strong>📅 Дата:</strong> {{ post.created_at|date:"d.m.Y H:i" }} |
-                <strong>⭐ Рейтинг:</strong> {{ post.rating }}
-            </div>
+                <div style="color: #666; margin-bottom: 10px;">
+                    <strong>👤 {% trans "Author:" %}</strong>
+                    {% if post.author and post.author.user %}
+                        {{ post.author.user.username }}
+                    {% else %}
+                        {% trans "Unknown" %}
+                    {% endif %}
+                    |
+                    <strong>📅 {% trans "Date:" %}</strong> {{ post.created_at|date:"d.m.Y H:i" }} |
+                    <strong>⭐ {% trans "Rating:" %}</strong> {{ post.rating }}
+                </div>
 
-            <!-- КОНТЕНТ ПОСТА  -->
-            <div style="line-height: 1.5; margin-bottom: 15px;">
-                {{ post.content|censor_text|safe|truncatewords:30 }}
-            </div>
+                <!-- КОНТЕНТ ПОСТА -->
+                <div style="line-height: 1.5; margin-bottom: 15px;">
+                    {{ post.content|censor_text|safe|truncatewords:30 }}
+                </div>
 
-            {% if post.categories.all %}
-            <div style="margin: 15px 0;">
-                <strong>📁 Категории:</strong>
-                {% for category in post.categories.all %}
-                <span style="background: #6c757d; color: white; padding: 4px 10px; border-radius: 15px; margin: 2px; display: inline-block; font-size: 0.8em;">
-                    {{ category.name }}
-                </span>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            {% if user.is_authenticated %}
-                {% if user == post.author.user or user.is_superuser %}
-                <div class="actions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                    <a href="{% url 'news_update' post.pk %}" class="btn btn-sm btn-outline-primary">✏️ Редактировать</a>
-                    <a href="{% url 'news_delete' post.pk %}" class="btn btn-sm btn-outline-danger">🗑️ Удалить</a>
+                {% if post.categories.all %}
+                <div style="margin: 15px 0;">
+                    <strong>📁 {% trans "Categories:" %}</strong>
+                    {% for category in post.categories.all %}
+                    <span style="background: #6c757d; color: white; padding: 4px 10px; border-radius: 15px; margin: 2px; display: inline-block; font-size: 0.8em;">
+                        {{ category.name }}
+                    </span>
+                    {% endfor %}
                 </div>
                 {% endif %}
-            {% endif %}
-        </div>
-        {% empty %}
-        <div style="text-align: center; padding: 60px 20px; background: #f8f9fa; border-radius: 8px;">
-            <h4 style="color: #666; margin-bottom: 20px;">📭 Новостей не найдено</h4>
-            <p style="color: #888; margin-bottom: 25px;">На данный момент в базе нет новостей.</p>
-            {% if user.is_authenticated and is_author %}
-            <a href="{% url 'news_create' %}" class="btn btn-primary btn-lg">📝 Создать первую новость</a>
-            {% else %}
-            <p style="color: #888;">
+
                 {% if user.is_authenticated %}
-                <a href="{% url 'become_author' %}" class="btn btn-warning">Стать автором</a>
-                {% else %}
-                <a href="{% url 'account_login' %}" class="btn btn-outline-primary">Войти</a>
+                    {% if user == post.author.user or user.is_superuser %}
+                    <div class="actions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <a href="{% url 'news_update' post.pk %}" class="btn btn-sm btn-outline-primary">✏️ {% trans "Edit" %}</a>
+                        <a href="{% url 'news_delete' post.pk %}" class="btn btn-sm btn-outline-danger">🗑️ {% trans "Delete" %}</a>
+                    </div>
+                    {% endif %}
                 {% endif %}
-            </p>
-            {% endif %}
-        </div>
-        {% endfor %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 60px 20px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="color: #666; margin-bottom: 20px;">📭 {% trans "No news found" %}</h4>
+                <p style="color: #888; margin-bottom: 25px;">{% trans "There are currently no news in the database." %}</p>
+                {% if user.is_authenticated and is_author %}
+                <a href="{% url 'news_create' %}" class="btn btn-primary btn-lg">📝 {% trans "Create first news" %}</a>
+                {% else %}
+                <p style="color: #888;">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'become_author' %}" class="btn btn-warning">{% trans "Become Author" %}</a>
+                    {% else %}
+                    <a href="{% url 'account_login' %}" class="btn btn-outline-primary">{% trans "Login" %}</a>
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+        {% endif %}
     </div>
 
     <!-- Пагинация -->
-    {% if page_obj.has_other_pages %}
+    {% if page_obj and page_obj.has_other_pages %}
     <nav style="text-align: center; margin: 40px 0;">
         <div style="display: inline-block;">
             {% if page_obj.has_previous %}
-                <a href="?page=1" class="btn btn-outline-secondary btn-sm">« Первая</a>
-                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-primary btn-sm">‹ Назад</a>
+                <a href="?page=1" class="btn btn-outline-secondary btn-sm">« {% trans "First" %}</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-primary btn-sm">‹ {% trans "Previous" %}</a>
             {% endif %}
 
             <span style="display: inline-block; margin: 0 15px; padding: 8px 15px; background: #f8f9fa; border-radius: 4px; font-weight: bold;">
-                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                {% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ page_obj.paginator.num_pages }}
             </span>
 
             {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-primary btn-sm">Вперед ›</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-outline-secondary btn-sm">Последняя »</a>
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-primary btn-sm">{% trans "Next" %} ›</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-outline-secondary btn-sm">{% trans "Last" %} »</a>
             {% endif %}
         </div>
     </nav>

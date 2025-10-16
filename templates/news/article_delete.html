@@ -1,16 +1,52 @@
 {% extends 'default.html' %}
+{% load censor_filters %}
+{% load i18n %}
 
-{% block title %}Удалить статью{% endblock %}
+{% block title %}{% trans "Delete Article" %}{% endblock %}
 
 {% block content %}
-<h2>Удалить статью</h2>
+<div class="container" style="max-width: 800px; margin: 0 auto;">
+    <div class="delete-confirmation" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>{% trans "Delete Article" %}</h2>
 
-<p>Вы уверены, что хотите удалить "{{ object.title }}"?</p>
+        <div class="alert alert-warning" style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 4px; border: 1px solid #ffeaa7; margin: 20px 0;">
+            <strong>⚠️ {% trans "Warning!" %}</strong>
+            <p style="margin: 10px 0 0 0;">{% trans "Are you sure you want to delete the article" %} "<strong>{{ object.title|censor }}</strong>"?</p>
+        </div>
 
-<form method="post">
-    {% csrf_token %}
-    <button type="submit">Удалить</button>
-</form>
+        <div class="article-preview" style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <h4 style="margin-top: 0;">{% trans "Article preview:" %}</h4>
+            <p><strong>{% trans "Author:" %}</strong> {{ object.author.user.username }}</p>
+            <p><strong>{% trans "Created:" %}</strong> {{ object.created_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>{% trans "Content preview:" %}</strong> {{ object.content|censor|truncatewords:20 }}</p>
+        </div>
 
-<p><a href="{% url 'news_list' %}">← Отмена</a></p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-actions" style="margin-top: 25px;">
+                <button type="submit" class="btn btn-danger" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                    🗑️ {% trans "Delete" %}
+                </button>
+                <a href="{% url 'article_list' %}" class="btn btn-secondary" style="background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                    ← {% trans "Cancel" %}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.alert-warning {
+    border-left: 4px solid #ffc107;
+}
+</style>
 {% endblock %}

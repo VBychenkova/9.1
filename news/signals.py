@@ -1,6 +1,7 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, post_migrate
 from django.dispatch import receiver
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.mail import send_mail
 from django.core.cache import cache
 from django.template.loader import render_to_string
@@ -126,3 +127,14 @@ def clear_post_cache(sender, instance, **kwargs):
 
     except Exception as e:
         print(f"Ошибка при очистке кэша: {e}")
+
+@receiver(post_migrate)
+def create_authors_group(sender, **kwargs):
+    if sender.name == 'news':
+        group, created = Group.objects.get_or_create(name='authors')
+        if created:
+            # Добавляем разрешения для постов
+            content_type = ContentType.objects.get_for_model(Post)
+            permissions = Permission.objects.filter(content_type=content_type)
+            group.permissions.set(permissions)
+            print("Группа 'authors' создана с разрешениями")

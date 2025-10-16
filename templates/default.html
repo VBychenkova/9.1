@@ -1,6 +1,7 @@
 {% load static %}
 {% load cache %}
 {% load i18n %}
+{% load tz %}
 
 <!DOCTYPE html>
 <html lang="{{ request.LANGUAGE_CODE }}">
@@ -9,12 +10,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% trans "News Portal" %}{% endblock %}</title>
 
+<!-- Автоматическая смена темы в зависимости от времени -->
+    <style>
+        :root {
+            --bg-color: {% if current_time.hour >= 19 or current_time.hour <= 7 %} #1a1a1a {% else %} #ffffff {% endif %};
+            --text-color: {% if current_time.hour >= 19 or current_time.hour <= 7 %} #ffffff {% else %} #333333 {% endif %};
+            --header-bg: {% if current_time.hour >= 19 or current_time.hour <= 7 %} #2d2d2d {% else %} #f8f9fa {% endif %};
+            --border-color: {% if current_time.hour >= 19 or current_time.hour <= 7 %} #444444 {% else %} #dee2e6 {% endif %};
+            --link-color: {% if current_time.hour >= 19 or current_time.hour <= 7 %} #4da6ff {% else %} #007bff {% endif %};
+            --btn-primary: {% if current_time.hour >= 19 or current_time.hour <= 7 %} #0066cc {% else %} #007bff {% endif %};
+            --btn-secondary: {% if current_time.hour >= 19 or current_time.hour <= 7 %} #666666 {% else %} #6c757d {% endif %};
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        nav a {
+            color: var(--text-color);
+        }
+
+        a {
+            color: var(--link-color);
+        }
+
+        .btn-primary {
+            background-color: var(--btn-primary);
+            border-color: var(--btn-primary);
+        }
+
+        .btn-secondary {
+            background-color: var(--btn-secondary);
+            border-color: var(--btn-secondary);
+        }
+
+        .news-item, .article-item {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .form-control {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-control:focus {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border-color: var(--link-color);
+        }
+
+        .theme-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            background: {% if current_time.hour >= 19 or current_time.hour <= 7 %} #ffeb3b {% else %} #ff9800 {% endif %};
+        }
+    </style>
+
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <header>
-        <h1><a href="/news/" style="text-decoration: none; color: #333;">{% trans "News Portal" %}</a></h1>
+        <h1><a href="/news/" style="text-decoration: none; color: var(--text-color);">
+            {% trans "News Portal" %}
+            <span class="theme-indicator" title="{% if current_time.hour >= 19 or current_time.hour <= 7 %}{% trans 'Dark theme (Night)' %}{% else %}{% trans 'Light theme (Day)' %}{% endif %}"></span>
+        </a></h1>
 
           <!-- ВРЕМЕННО отключаем кэш для отладки перевода -->
         <!-- {% cache 10 navigation request.LANGUAGE_CODE %} -->
@@ -56,11 +129,32 @@
                     </select>
                 </form>
             </div>
+
+            <!-- Переключатель часового пояса -->
+            <div style="float: right; margin-right: 20px;">
+                <form action="{% url 'set_timezone' %}" method="post">
+                    {% csrf_token %}
+                    <select name="timezone" onchange="this.form.submit()" style="padding: 5px; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color);">
+                        <option value="">{% trans "Server Time" %}</option>
+                        {% for tz in timezones %}
+                            <option value="{{ tz }}" {% if tz == TIME_ZONE %}selected{% endif %}>{{ tz }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+
         </nav>
         <!--{% endcache %}-->
     </header>
 
     <main>
+        <!-- Отображение текущего времени и часового пояса -->
+        <div style="text-align: center; padding: 10px; background: var(--header-bg); color: var(--text-color); font-size: 0.9em;">
+            {% get_current_timezone as TIME_ZONE %}
+            {% trans "Current time" %}: {{ current_time|timezone:TIME_ZONE|date:"d.m.Y H:i" }}
+            ({{ TIME_ZONE|default:"UTC" }})
+        </div>
+
         <!-- Отображение сообщений - НЕ кэшируем, так как они динамические -->
         {% if messages %}
         <div class="messages">
@@ -77,18 +171,20 @@
     </main>
 
     <!-- {% cache 10 footer request.LANGUAGE_CODE %} -->
-    <footer>
+    <footer style="background: var(--header-bg); color: var(--text-color); padding: 20px; text-align: center; border-top: 1px solid var(--border-color);">
         <p>&copy; {% now "Y" %} {% trans "News Portal" %}</p>
         <p>
-            <a href="/">{% trans "Home" %}</a> |
-            <a href="/news/">{% trans "All News" %}</a>
+            <a href="/" style="color: var(--link-color);">{% trans "Home" %}</a> |
+            <a href="/news/" style="color: var(--link-color);">{% trans "All News" %}</a>
+        </p>
+        <p style="font-size: 0.8em; color: var(--text-color); opacity: 0.7;">
+            {% trans "Theme" %}: {% if current_time.hour >= 19 or current_time.hour <= 7 %}{% trans "Dark (Night)" %}{% else %}{% trans "Light (Day)" %}{% endif %}
         </p>
     </footer>
     <!-- {% endcache %} -->
 
     <!-- Подключение статических JS файлов -->
     <script src="{% static 'js/script.js' %}"></script>
-
     {% block extra_js %}{% endblock %}
 </body>
 </html>

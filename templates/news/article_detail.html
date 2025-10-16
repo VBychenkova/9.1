@@ -1,7 +1,8 @@
 {% extends 'default.html' %}
 {% load censor_filters %}
+{% load i18n %}
 
-{% block title %}{{ article.title }} - News Portal{% endblock %}
+{% block title %}{{ article.title }} - {% trans "News Portal" %}{% endblock %}
 
 {% block content %}
 <div style="max-width: 1200px; margin: 0 auto;">
@@ -9,59 +10,103 @@
         <h1>{{ article.title|censor }}</h1>
 
         <div class="article-meta" style="color: #666; margin-bottom: 20px;">
-            <p><strong>Автор:</strong> {{ article.author.user.username }}</p>
-            <p><strong>Дата публикации:</strong> {{ article.created_at|date:"d.m.Y H:i" }}</p>
-            <p><strong>Категория:</strong> {{ article.category.name }}</p>
-            <p><strong>Рейтинг:</strong> {{ article.rating }}</p>
+            <p><strong>{% trans "Author:" %}</strong>
+                {% if article.author and article.author.user %}
+                    {{ article.author.user.username }}
+                {% else %}
+                    {% trans "Unknown" %}
+                {% endif %}
+            </p>
+            <p><strong>{% trans "Publication date:" %}</strong> {{ article.created_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>{% trans "Rating:" %}</strong> {{ article.rating }}</p>
+
+            <!-- Категории статьи -->
+            {% if article.categories.all %}
+            <p><strong>{% trans "Categories:" %}</strong>
+                {% for category in article.categories.all %}
+                    {{ category.name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
         </div>
 
         <div class="article-content" style="line-height: 1.6; font-size: 16px;">
             {{ article.content|linebreaks|censor }}
         </div>
 
-        <!-- Категория и подписка -->
-        {% if article.category %}
+        <!-- Категории и подписки -->
+        {% if article.categories.all %}
         <div class="categories" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-            <strong>Категория:</strong>
+            <strong>{% trans "Categories:" %}</strong>
+            {% for category in article.categories.all %}
             <span class="badge" style="background: #6c757d; color: white; padding: 5px 10px; border-radius: 4px; margin: 2px; display: inline-block;">
-                {{ article.category.name }}
+                {{ category.name }}
                 {% if user.is_authenticated %}
-                    {% if user in article.category.subscribers.all %}
-                        <a href="{% url 'unsubscribe_from_category' article.category.id %}"
+                    {% if user in category.subscribers.all %}
+                        <a href="{% url 'unsubscribe_from_category' category.id %}"
                            style="color: white; margin-left: 5px; text-decoration: none;"
-                           title="Отписаться от категории {{ article.category.name }}">
+                           title="{% trans 'Unsubscribe from category' %} {{ category.name }}">
                             ✕
                         </a>
                     {% else %}
-                        <a href="{% url 'subscribe_to_category' article.category.id %}"
+                        <a href="{% url 'subscribe_to_category' category.id %}"
                            style="color: white; margin-left: 5px; text-decoration: none;"
-                           title="Подписаться на категорию {{ article.category.name }}">
+                           title="{% trans 'Subscribe to category' %} {{ category.name }}">
                             +
                         </a>
                     {% endif %}
                 {% endif %}
             </span>
+            {% endfor %}
+
+            {% if not user.is_authenticated %}
+            <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                <a href="{% url 'account_login' %}">{% trans "Login" %}</a> {% trans "to subscribe to categories" %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Время обновления (если отличается от создания) -->
+        {% if article.updated_at != article.created_at %}
+        <div style="color: #888; font-size: 0.9em; margin-top: 15px;">
+            <em>{% trans "Last updated:" %} {{ article.updated_at|date:"d.m.Y H:i" }}</em>
         </div>
         {% endif %}
     </article>
 
     <!-- Действия -->
-    {% if user.is_authenticated and user == article.author.user or user.is_superuser %}
-    <div class="actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-        <a href="{% url 'article_update' article.pk %}" class="btn btn-primary">
-            ✏️ Редактировать статью
-            {% if user.is_superuser and article.author.user != user %}
-                (админ)
-            {% endif %}
-        </a>
-        <a href="{% url 'article_delete' article.pk %}" class="btn btn-danger">
-            🗑️ Удалить статью
-            {% if user.is_superuser and article.author.user != user %}
-                (админ)
-            {% endif %}
-        </a>
-    </div>
+    {% if user.is_authenticated %}
+        {% if user == article.author.user or user.is_superuser %}
+        <div class="actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <a href="{% url 'article_update' article.pk %}" class="btn btn-primary">
+                ✏️ {% trans "Edit article" %}
+                {% if user.is_superuser and article.author.user != user %}
+                    ({% trans "admin" %})
+                {% endif %}
+            </a>
+            <a href="{% url 'article_delete' article.pk %}" class="btn btn-danger">
+                🗑️ {% trans "Delete article" %}
+                {% if user.is_superuser and article.author.user != user %}
+                    ({% trans "admin" %})
+                {% endif %}
+            </a>
+        </div>
+        {% endif %}
     {% endif %}
+
+    <!-- Навигация -->
+    <div class="navigation" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
+        <a href="{% url 'article_list' %}" class="btn btn-secondary">
+            ← {% trans "Back to all articles" %}
+        </a>
+
+        {% if user.is_authenticated and is_author %}
+        <a href="{% url 'article_create' %}" class="btn btn-success" style="float: right;">
+            ➕ {% trans "Create new article" %}
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <style>
@@ -73,6 +118,12 @@
     border-radius: 4px;
     border: none;
     cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
 }
 
 .btn-primary {
@@ -85,11 +136,43 @@
     color: white;
 }
 
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
 .article-detail {
     background: white;
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Стили для темной темы */
+@media (prefers-color-scheme: dark) {
+    .article-detail {
+        background: #2d2d2d;
+        color: #ffffff;
+    }
+
+    .categories {
+        background: #3d3d3d !important;
+        color: #ffffff;
+    }
 }
 </style>
 {% endblock %}

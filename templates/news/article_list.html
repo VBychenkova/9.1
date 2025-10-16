@@ -1,15 +1,16 @@
 {% extends 'default.html' %}
 {% load censor_filters %}
+{% load i18n %}
 
-{% block title %}Статьи - News Portal{% endblock %}
+{% block title %}{% trans "Articles" %}{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>📝 Статьи</h1>
+        <h1>📝{% trans "Articles" %}</h1>
         <div>
             {% if user.is_authenticated and is_author %}
-            <a href="{% url 'article_create' %}" class="btn btn-success">➕ Добавить статью</a>
+            <a href="{% url 'article_create' %}" class="btn btn-success">➕ {% trans "Add Article" %}</a>
             {% endif %}
         </div>
     </div>
@@ -18,8 +19,8 @@
     <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
         <form method="get" action="{% url 'news_search' %}">
             <div class="input-group">
-                <input type="text" name="q" class="form-control" placeholder="Поиск по заголовку и содержанию..." value="{{ request.GET.q }}">
-                <button class="btn btn-primary" type="submit">🔍 Найти</button>
+                <input type="text" name="q" class="form-control" placeholder="{% trans 'Search by title and content...' %}" value="{{ request.GET.q }}">
+                <button class="btn btn-primary" type="submit">🔍 {% trans "Search" %}</button>
             </div>
         </form>
     </div>
@@ -27,9 +28,9 @@
     <!-- Статистика -->
     <div style="margin-bottom: 15px;">
         <small class="text-muted">
-            📊 Показано: <strong>{{ articles|length }}</strong> статей
+            📊 {% trans "Showing:" %} <strong>{{ articles|length }}</strong> {% trans "articles" %}
             {% if page_obj.paginator.count > articles|length %}
-            из <strong>{{ page_obj.paginator.count }}</strong>
+            {% trans "of" %} <strong>{{ page_obj.paginator.count }}</strong>
             {% endif %}
         </small>
     </div>
@@ -43,7 +44,7 @@
                     {{ article.title|censor_text }}
                 </a>
                 {% if article.is_recent %}
-                <span class="badge bg-success" style="font-size: 0.7em;">NEW</span>
+                <span class="badge bg-success" style="font-size: 0.7em;">{% trans "NEW" %}</span>
                 {% endif %}
                 {% if article.rating > 50 %}
                 <span class="badge bg-warning" style="font-size: 0.7em;">🔥</span>
@@ -51,9 +52,9 @@
             </h3>
 
             <div style="color: #666; margin-bottom: 10px;">
-                <strong>👤 Автор:</strong> {{ article.author.user.username }} |
-                <strong>📅 Дата:</strong> {{ article.created_at|date:"d.m.Y H:i" }} |
-                <strong>⭐ Рейтинг:</strong> {{ article.rating }}
+                <strong>👤 {% trans "Author:" %}</strong> {{ article.author.user.username }} |
+                <strong>📅 {% trans "Date:" %}</strong> {{ article.created_at|date:"d.m.Y H:i" }} |
+                <strong>⭐ {% trans "Rating:" %}</strong> {{ article.rating }}
             </div>
 
             <!-- КОНТЕНТ СТАТЬИ С ЦЕНЗУРОЙ -->
@@ -63,7 +64,7 @@
 
             {% if article.categories.all %}
             <div style="margin: 15px 0;">
-                <strong>📁 Категории:</strong>
+                <strong>📁 {% trans "Categories:" %}</strong>
                 {% for category in article.categories.all %}
                 <span style="background: #6c757d; color: white; padding: 4px 10px; border-radius: 15px; margin: 2px; display: inline-block; font-size: 0.8em;">
                     {{ category.name }}
@@ -75,24 +76,24 @@
             {% if user.is_authenticated %}
                 {% if user == article.author.user or user.is_superuser %}
                 <div class="actions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                    <a href="{% url 'article_update' article.pk %}" class="btn btn-sm btn-outline-primary">✏️ Редактировать</a>
-                    <a href="{% url 'article_delete' article.pk %}" class="btn btn-sm btn-outline-danger">🗑️ Удалить</a>
+                    <a href="{% url 'article_update' article.pk %}" class="btn btn-sm btn-outline-primary">✏️ {% trans "Edit" %}</a>
+                    <a href="{% url 'article_delete' article.pk %}" class="btn btn-sm btn-outline-danger">🗑️ {% trans "Delete" %}</a>
                 </div>
                 {% endif %}
             {% endif %}
         </div>
         {% empty %}
         <div style="text-align: center; padding: 60px 20px; background: #f8f9fa; border-radius: 8px;">
-            <h4 style="color: #666; margin-bottom: 20px;">📭 Статей не найдено</h4>
-            <p style="color: #888; margin-bottom: 25px;">На данный момент в базе нет статей.</p>
+            <h4 style="color: #666; margin-bottom: 20px;">📭 {% trans "No articles found" %}</h4>
+            <p style="color: #888; margin-bottom: 25px;">{% trans "There are currently no articles in the database." %}</p>
             {% if user.is_authenticated and is_author %}
-            <a href="{% url 'article_create' %}" class="btn btn-primary btn-lg">📝 Создать первую статью</a>
+            <a href="{% url 'article_create' %}" class="btn btn-primary btn-lg">📝 {% trans "Create first article" %}</a>
             {% else %}
             <p style="color: #888;">
                 {% if user.is_authenticated %}
-                <a href="{% url 'become_author' %}" class="btn btn-warning">Стать автором</a>
+                <a href="{% url 'become_author' %}" class="btn btn-warning">{% trans "Become Author" %}</a>
                 {% else %}
-                <a href="{% url 'account_login' %}" class="btn btn-outline-primary">Войти</a>
+                <a href="{% url 'account_login' %}" class="btn btn-outline-primary">{% trans "Login" %}</a>
                 {% endif %}
             </p>
             {% endif %}
@@ -105,17 +106,17 @@
     <nav style="text-align: center; margin: 40px 0;">
         <div style="display: inline-block;">
             {% if page_obj.has_previous %}
-                <a href="?page=1" class="btn btn-outline-secondary btn-sm">« Первая</a>
-                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-primary btn-sm">‹ Назад</a>
+                <a href="?page=1" class="btn btn-outline-secondary btn-sm">« {% trans "First" %}</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-primary btn-sm">‹ {% trans "Previous" %}</a>
             {% endif %}
 
             <span style="display: inline-block; margin: 0 15px; padding: 8px 15px; background: #f8f9fa; border-radius: 4px; font-weight: bold;">
-                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                {% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ page_obj.paginator.num_pages }}
             </span>
 
             {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-primary btn-sm">Вперед ›</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-outline-secondary btn-sm">Последняя »</a>
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-primary btn-sm">{% trans "Next" %} ›</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-outline-secondary btn-sm">{% trans "Last" %} »</a>
             {% endif %}
         </div>
     </nav>

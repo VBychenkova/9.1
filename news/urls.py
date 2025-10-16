@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     # Главная страница
     path('i18n/', include('django.conf.urls.i18n')),
+    path('set_timezone/', views.set_timezone, name='set_timezone'),
     path('', views.NewsList.as_view(), name='news_list'),
     path('home/', views.HomePageView.as_view(), name='home'),
 

@@ -56,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'news.middlewares.TimezoneMiddleware',
 #    'allauth.account.middleware.AccountMiddleware', # Allauth middleware
 ]
 
@@ -73,6 +74,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'news.context_processors.user_groups',
+                'news.context_processors.timezone_context',
             ],
         },
     },

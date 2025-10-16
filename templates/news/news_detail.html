@@ -1,7 +1,8 @@
 {% extends 'default.html' %}
 {% load censor_filters %}
+{% load i18n %}
 
-{% block title %}{{ news.title }} - News Portal{% endblock %}
+{% block title %}{{ news.title }} - {% trans "News Portal" %}{% endblock %}
 
 {% block content %}
 <div style="max-width: 1200px; margin: 0 auto;">
@@ -9,59 +10,103 @@
         <h1>{{ news.title|censor }}</h1>
 
         <div class="news-meta" style="color: #666; margin-bottom: 20px;">
-            <p><strong>Автор:</strong> {{ news.author.user.username }}</p>
-            <p><strong>Дата публикации:</strong> {{ news.created_at|date:"d.m.Y H:i" }}</p>
-            <p><strong>Категория:</strong> {{ news.category.name }}</p>
-            <p><strong>Рейтинг:</strong> {{ news.rating }}</p>
+            <p><strong>{% trans "Author:" %}</strong>
+                {% if news.author and news.author.user %}
+                    {{ news.author.user.username }}
+                {% else %}
+                    {% trans "Unknown" %}
+                {% endif %}
+            </p>
+            <p><strong>{% trans "Publication date:" %}</strong> {{ news.created_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>{% trans "Rating:" %}</strong> {{ news.rating }}</p>
+
+            <!-- Категории (ManyToMany поле) -->
+            {% if news.categories.all %}
+            <p><strong>{% trans "Categories:" %}</strong>
+                {% for category in news.categories.all %}
+                    {{ category.name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
         </div>
 
         <div class="news-content" style="line-height: 1.6; font-size: 16px;">
             {{ news.content|linebreaks|censor }}
         </div>
 
-        <!-- Категория и подписка -->
-        {% if news.category %}
+        <!-- Категории и подписки -->
+        {% if news.categories.all %}
         <div class="categories" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-            <strong>Категория:</strong>
+            <strong>{% trans "Categories:" %}</strong>
+            {% for category in news.categories.all %}
             <span class="badge" style="background: #6c757d; color: white; padding: 5px 10px; border-radius: 4px; margin: 2px; display: inline-block;">
-                {{ news.category.name }}
+                {{ category.name }}
                 {% if user.is_authenticated %}
-                    {% if user in news.category.subscribers.all %}
-                        <a href="{% url 'unsubscribe_from_category' news.category.id %}"
+                    {% if user in category.subscribers.all %}
+                        <a href="{% url 'unsubscribe_from_category' category.id %}"
                            style="color: white; margin-left: 5px; text-decoration: none;"
-                           title="Отписаться от категории {{ news.category.name }}">
+                           title="{% trans 'Unsubscribe from category' %} {{ category.name }}">
                             ✕
                         </a>
                     {% else %}
-                        <a href="{% url 'subscribe_to_category' news.category.id %}"
+                        <a href="{% url 'subscribe_to_category' category.id %}"
                            style="color: white; margin-left: 5px; text-decoration: none;"
-                           title="Подписаться на категорию {{ news.category.name }}">
+                           title="{% trans 'Subscribe to category' %} {{ category.name }}">
                             +
                         </a>
                     {% endif %}
                 {% endif %}
             </span>
+            {% endfor %}
+
+            {% if not user.is_authenticated %}
+            <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                <a href="{% url 'account_login' %}">{% trans "Login" %}</a> {% trans "to subscribe to categories" %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Время обновления (если отличается от создания) -->
+        {% if news.updated_at != news.created_at %}
+        <div style="color: #888; font-size: 0.9em; margin-top: 15px;">
+            <em>{% trans "Last updated:" %} {{ news.updated_at|date:"d.m.Y H:i" }}</em>
         </div>
         {% endif %}
     </article>
 
     <!-- Действия -->
-    {% if user.is_authenticated and user == news.author.user or user.is_superuser %}
-    <div class="actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-        <a href="{% url 'news_update' news.pk %}" class="btn btn-primary">
-            ✏️ Редактировать новость
-            {% if user.is_superuser and news.author.user != user %}
-                (админ)
-            {% endif %}
-        </a>
-        <a href="{% url 'news_delete' news.pk %}" class="btn btn-danger">
-            🗑️ Удалить новость
-            {% if user.is_superuser and news.author.user != user %}
-                (админ)
-            {% endif %}
-        </a>
-    </div>
+    {% if user.is_authenticated %}
+        {% if user == news.author.user or user.is_superuser %}
+        <div class="actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <a href="{% url 'news_update' news.pk %}" class="btn btn-primary">
+                ✏️ {% trans "Edit news" %}
+                {% if user.is_superuser and news.author.user != user %}
+                    ({% trans "admin" %})
+                {% endif %}
+            </a>
+            <a href="{% url 'news_delete' news.pk %}" class="btn btn-danger">
+                🗑️ {% trans "Delete news" %}
+                {% if user.is_superuser and news.author.user != user %}
+                    ({% trans "admin" %})
+                {% endif %}
+            </a>
+        </div>
+        {% endif %}
     {% endif %}
+
+    <!-- Навигация -->
+    <div class="navigation" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
+        <a href="{% url 'news_list' %}" class="btn btn-secondary">
+            ← {% trans "Back to all news" %}
+        </a>
+
+        {% if user.is_authenticated and is_author %}
+        <a href="{% url 'news_create' %}" class="btn btn-success" style="float: right;">
+            ➕ {% trans "Create new news" %}
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <style>
@@ -73,6 +118,12 @@
     border-radius: 4px;
     border: none;
     cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
 }
 
 .btn-primary {
@@ -85,11 +136,43 @@
     color: white;
 }
 
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
 .news-detail {
     background: white;
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Стили для темной темы */
+@media (prefers-color-scheme: dark) {
+    .news-detail {
+        background: #2d2d2d;
+        color: #ffffff;
+    }
+
+    .categories {
+        background: #3d3d3d !important;
+        color: #ffffff;
+    }
 }
 </style>
 {% endblock %}
