@@ -1,67 +1,138 @@
 {% extends 'default.html' %}
-
-{% load cache %}
+{% load censor_filters %}
 
 {% block title %}Статьи - News Portal{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1>Статьи</h1>
-    
-    <!-- Кэшируем заголовок на 30сек -->
-    {% cache 30 articles_header %}
-    <div class="page-info">
-        <p>Всего статей: {{ articles.count }}</p>
-    </div>
-    {% endcache %}
-
-    {% for article in articles %}
-        <!-- Кэшируем каждую статью отдельно на 1 минуту -->
-        {% cache 60 article_item article.id %}
-        <div class="news-item">
-            <h3>
-                <a href="{% url 'article_detail' article.id %}">{{ article.title }}</a>
-            </h3>
-            <p><strong>Автор:</strong> {{ article.author.user.username }}</p>
-            <p><strong>Дата:</strong> {{ article.created_at|date:"d.m.Y H:i" }}</p>
-            <p>{{ article.content|truncatewords:30 }}</p>
-            
-            <div class="article-meta">
-                <span class="category">Категория: {{ article.category.name }}</span>
-                <span class="rating">Рейтинг: {{ article.rating }}</span>
-            </div>
-            
-            {% if user.is_authenticated and user == article.author.user or user.is_superuser %}
-            <div class="actions">
-                <a href="{% url 'article_update' article.id %}">Редактировать</a>
-                <a href="{% url 'article_delete' article.id %}">Удалить</a>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>📝 Статьи</h1>
+        <div>
+            {% if user.is_authenticated and is_author %}
+            <a href="{% url 'article_create' %}" class="btn btn-success">➕ Добавить статью</a>
             {% endif %}
         </div>
-        {% endcache %}
-    {% empty %}
-        <p>Статьи пока не добавлены.</p>
-    {% endfor %}
+    </div>
 
-    <!-- Кэшируем пагинацию на 30сек -->
-    {% cache 30 articles_pagination page_obj.number %}
-    <div class="pagination">
-        <span class="step-links">
-            {% if page_obj.has_previous %}
-                <a href="?page=1">&laquo; первая</a>
-                <a href="?page={{ page_obj.previous_page_number }}">предыдущая</a>
+    <!-- Простой поиск -->
+    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
+        <form method="get" action="{% url 'news_search' %}">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" placeholder="Поиск по заголовку и содержанию..." value="{{ request.GET.q }}">
+                <button class="btn btn-primary" type="submit">🔍 Найти</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Статистика -->
+    <div style="margin-bottom: 15px;">
+        <small class="text-muted">
+            📊 Показано: <strong>{{ articles|length }}</strong> статей
+            {% if page_obj.paginator.count > articles|length %}
+            из <strong>{{ page_obj.paginator.count }}</strong>
+            {% endif %}
+        </small>
+    </div>
+
+    <!-- Результаты -->
+    <div class="posts-container">
+        {% for article in articles %}
+        <div class="news-item" style="border: 1px solid #ddd; padding: 20px; margin: 15px 0; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3>
+                <a href="{% url 'article_detail' article.pk %}" style="color: #0d6efd; text-decoration: none;">
+                    {{ article.title|censor_text }}
+                </a>
+                {% if article.is_recent %}
+                <span class="badge bg-success" style="font-size: 0.7em;">NEW</span>
+                {% endif %}
+                {% if article.rating > 50 %}
+                <span class="badge bg-warning" style="font-size: 0.7em;">🔥</span>
+                {% endif %}
+            </h3>
+
+            <div style="color: #666; margin-bottom: 10px;">
+                <strong>👤 Автор:</strong> {{ article.author.user.username }} |
+                <strong>📅 Дата:</strong> {{ article.created_at|date:"d.m.Y H:i" }} |
+                <strong>⭐ Рейтинг:</strong> {{ article.rating }}
+            </div>
+
+            <!-- КОНТЕНТ СТАТЬИ С ЦЕНЗУРОЙ -->
+            <div style="line-height: 1.5; margin-bottom: 15px;">
+                {{ article.content|censor_text|safe|truncatewords:30 }}
+            </div>
+
+            {% if article.categories.all %}
+            <div style="margin: 15px 0;">
+                <strong>📁 Категории:</strong>
+                {% for category in article.categories.all %}
+                <span style="background: #6c757d; color: white; padding: 4px 10px; border-radius: 15px; margin: 2px; display: inline-block; font-size: 0.8em;">
+                    {{ category.name }}
+                </span>
+                {% endfor %}
+            </div>
             {% endif %}
 
-            <span class="current">
-                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}.
+            {% if user.is_authenticated %}
+                {% if user == article.author.user or user.is_superuser %}
+                <div class="actions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                    <a href="{% url 'article_update' article.pk %}" class="btn btn-sm btn-outline-primary">✏️ Редактировать</a>
+                    <a href="{% url 'article_delete' article.pk %}" class="btn btn-sm btn-outline-danger">🗑️ Удалить</a>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% empty %}
+        <div style="text-align: center; padding: 60px 20px; background: #f8f9fa; border-radius: 8px;">
+            <h4 style="color: #666; margin-bottom: 20px;">📭 Статей не найдено</h4>
+            <p style="color: #888; margin-bottom: 25px;">На данный момент в базе нет статей.</p>
+            {% if user.is_authenticated and is_author %}
+            <a href="{% url 'article_create' %}" class="btn btn-primary btn-lg">📝 Создать первую статью</a>
+            {% else %}
+            <p style="color: #888;">
+                {% if user.is_authenticated %}
+                <a href="{% url 'become_author' %}" class="btn btn-warning">Стать автором</a>
+                {% else %}
+                <a href="{% url 'account_login' %}" class="btn btn-outline-primary">Войти</a>
+                {% endif %}
+            </p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    {% if page_obj.has_other_pages %}
+    <nav style="text-align: center; margin: 40px 0;">
+        <div style="display: inline-block;">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" class="btn btn-outline-secondary btn-sm">« Первая</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-primary btn-sm">‹ Назад</a>
+            {% endif %}
+
+            <span style="display: inline-block; margin: 0 15px; padding: 8px 15px; background: #f8f9fa; border-radius: 4px; font-weight: bold;">
+                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
             </span>
 
             {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}">следующая</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}">последняя &raquo;</a>
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-primary btn-sm">Вперед ›</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-outline-secondary btn-sm">Последняя »</a>
             {% endif %}
-        </span>
-    </div>
-    {% endcache %}
+        </div>
+    </nav>
+    {% endif %}
 </div>
+
+<style>
+.news-item {
+    transition: all 0.3s ease;
+}
+.news-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.news-item h3 a:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+</style>
 {% endblock %}

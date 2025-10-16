@@ -1,0 +1,92 @@
+<div class="filters-panel" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h4>🔍 Фильтры и поиск</h4>
+    <form method="get" class="filter-form">
+        <div class="row">
+            <!-- Поиск -->
+            <div class="col-md-6 mb-3">
+                <label for="id_title" class="form-label">Поиск по заголовку</label>
+                {{ filter.form.title }}
+            </div>
+
+            <!-- Категории -->
+            <div class="col-md-6 mb-3">
+                <label for="id_categories" class="form-label">Категории</label>
+                {{ filter.form.categories }}
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Даты -->
+            <div class="col-md-3 mb-3">
+                <label for="id_created_after" class="form-label">Создано после</label>
+                {{ filter.form.created_after }}
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label for="id_created_before" class="form-label">Создано до</label>
+                {{ filter.form.created_before }}
+            </div>
+
+            <!-- Рейтинг -->
+            <div class="col-md-3 mb-3">
+                <label for="id_rating_min" class="form-label">Рейтинг от</label>
+                {{ filter.form.rating_min }}
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label for="id_rating_max" class="form-label">Рейтинг до</label>
+                {{ filter.form.rating_max }}
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Чекбоксы -->
+            <div class="col-md-6 mb-3">
+                <div class="form-check">
+                    {{ filter.form.only_popular }}
+                    <label class="form-check-label" for="id_only_popular">
+                        Только популярные
+                    </label>
+                </div>
+
+                <div class="form-check">
+                    {{ filter.form.only_recent }}
+                    <label class="form-check-label" for="id_only_recent">
+                        Только свежие (7 дней)
+                    </label>
+                </div>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="col-md-6 mb-3">
+                <button type="submit" class="btn btn-primary">Применить фильтры</button>
+                <a href="." class="btn btn-secondary">Сбросить</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Статистика -->
+    {% if total_count is not None %}
+    <div class="filter-stats" style="margin-top: 15px; padding: 10px; background: white; border-radius: 5px;">
+        <small>
+            📊 Показано: <strong>{{ filtered_count }}</strong> из <strong>{{ total_count }}</strong>
+            {% if filtered_count != total_count %}
+            <span class="text-success">(отфильтровано)</span>
+            {% endif %}
+        </small>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.filter-form input, .filter-form select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.filter-form .form-check {
+    margin-bottom: 10px;
+}
+</style>

@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Sum
+from django.urls import reverse
 from django.utils import timezone
+#from news.models import Post, Category, Author, Subscription
 
 
 class Author(models.Model):
@@ -32,6 +34,29 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def post_count(self):
+        """Количество постов в категории"""
+        return self.post_set.count()
+
+
+    @property
+    def news_count(self):
+        """Количество новостей в категории"""
+        return self.post_set.filter(post_type='NW').count()
+
+
+    @property
+    def articles_count(self):
+        """Количество статей в категории"""
+        return self.post_set.filter(post_type='AR').count()
+
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        ordering = ['name']
 
 
 class Subscription(models.Model):
@@ -82,6 +107,50 @@ class Post(models.Model):
         if self.pk:  # Если объект уже существует
             self.updated_at = timezone.now()
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.title} ({self.get_post_type_display()})"
+
+    def get_absolute_url(self):
+        if self.post_type == 'NW':
+            return reverse('news_detail', kwargs={'pk': self.pk})
+        else:
+            return reverse('article_detail', kwargs={'pk': self.pk})
+
+    @property
+    def short_title(self):
+        """Сокращенный заголовок"""
+        if len(self.title) > 50:
+            return self.title[:50] + '...'
+        return self.title
+
+    @property
+    def preview(self):
+        """Превью контента"""
+        if len(self.content) > 150:
+            return self.content[:150] + '...'
+        return self.content
+
+    @property
+    def is_recent(self):
+        """Является ли пост свежим (менее 7 дней)"""
+        return (timezone.now() - self.created_at).days < 7
+
+    @property
+    def is_popular(self):
+        """Является ли пост популярным"""
+        return self.rating > 100
+
+    class Meta:
+        verbose_name = 'Публикация'
+        verbose_name_plural = 'Публикации'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['post_type']),
+            models.Index(fields=['rating']),
+        ]
+
 
 class PostCategory(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
